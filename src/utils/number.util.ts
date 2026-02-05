@@ -7,9 +7,23 @@
 /**
  * Format angka ke format Rupiah
  * @example formatRupiah(1500000) => "Rp 1.500.000"
+ * @example formatRupiah(72193.44) => "Rp 72.193,44"
+ * @example formatRupiah(72193.00) => "Rp 72.193"
  */
 export function formatRupiah(amount: number): string {
-  return `Rp ${amount.toLocaleString('id-ID')}`;
+  // Cek apakah bilangan bulat
+  if (Number.isInteger(amount)) {
+    return `Rp ${amount.toLocaleString('id-ID')}`;
+  }
+  
+  // Jika ada desimal, format dengan 2 digit desimal
+  const formatted = amount.toLocaleString('id-ID', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+  
+  // Hilangkan ,00 di akhir jika desimalnya nol
+  return `Rp ${formatted.replace(/,00$/, '')}`;
 }
 
 /**

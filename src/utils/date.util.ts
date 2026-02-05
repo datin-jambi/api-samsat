@@ -60,3 +60,49 @@ export function parseDate(dateString: string): Date | null {
   
   return null;
 }
+
+/**
+ * Hitung selisih waktu dalam hari, bulan, dan tahun
+ * @param startDate - Tanggal mulai
+ * @param endDate - Tanggal akhir
+ * @returns Object berisi hari, bulan, dan tahun
+ */
+export function getDateDifference(startDate: Date, endDate: Date): {
+  hari: number;
+  bulan: number;
+  tahun: number;
+} {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  // Hitung total hari
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const totalHari = Math.floor((end.getTime() - start.getTime()) / msPerDay);
+  
+  // Hitung tahun
+  let tahun = end.getFullYear() - start.getFullYear();
+  
+  // Hitung bulan
+  let bulan = end.getMonth() - start.getMonth();
+  
+  // Adjust jika bulan negatif
+  if (bulan < 0) {
+    tahun--;
+    bulan += 12;
+  }
+  
+  // Adjust jika hari end lebih kecil dari hari start
+  if (end.getDate() < start.getDate()) {
+    bulan--;
+    if (bulan < 0) {
+      tahun--;
+      bulan += 12;
+    }
+  }
+  
+  return {
+    hari: totalHari,
+    bulan: tahun * 12 + bulan,
+    tahun
+  };
+}
