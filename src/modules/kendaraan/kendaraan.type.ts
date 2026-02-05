@@ -45,7 +45,7 @@ export interface KendaraanResponse {
   th_rakitan: number,
   jumlah_cc: number,
   warna_kb: string,
-  tg_akhir_pkb: Date,
+  tg_akhir_pkb: string,
   kd_plat: string,
   no_polisi: string,
   kd_merek_kb: string
@@ -64,7 +64,7 @@ export interface DetailKendaraanResponse {
   kd_merek_kb: string,
   kd_bbm: string,
   njkb: {
-    nilai_jual: number,
+    nilai_jual: string,
     bobot: number,
   },
     lokasi_transaksi_terakhir: {

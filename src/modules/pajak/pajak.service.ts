@@ -2,6 +2,7 @@ import {
   DetailPajakResponse
 } from './pajak.type';
 import { getKendaraanByNopol } from '../kendaraan/kendaraan.service';
+import { getNjkbKendaraanQuery } from '../kendaraan/kendaraan.query';
 import { 
   validateIsOpsen,
   calculatePajak,
@@ -24,14 +25,19 @@ export async function getPajakByNopol(
     return null;
   }
 
-  // 2. Hitung periode pajak yang harus dibayar
+  // 2. Ambil NJKB dalam bentuk numerik untuk perhitungan
+  const njkbData = await getNjkbKendaraanQuery(kendaraan.kd_merek_kb, kendaraan.th_rakitan);
+  const nilaiJual = Math.round(njkbData?.nilai_jual || 0);
+  const bobot = Number(njkbData?.bobot || 0);
+
+  // 3. Hitung periode pajak yang harus dibayar
   const terakhirBayar = new Date(kendaraan.tg_akhir_pkb);
   const sekarang = new Date();
   
   // Hitung jarak waktu dari terakhir bayar
   const jarak = getDateDifference(terakhirBayar, sekarang);
   
-  // 3. Hitung tagihan per periode (per tahun)
+  // 4. Hitung tagihan per periode (per tahun)
   const rincian = [];
   let totalPokok = 0;
   let totalDenda = 0;
@@ -66,8 +72,8 @@ export async function getPajakByNopol(
     
     // Hitung pajak pokok dan opsen
     const { pokok, opsen } = calculatePajak(
-      kendaraan.njkb.nilai_jual,
-      kendaraan.njkb.bobot,
+      nilaiJual,
+      bobot,
       isOpsen
     );
     
@@ -124,15 +130,15 @@ export async function getPajakByNopol(
   
   const grandTotal = totalPokok + totalDenda + totalOpsen + totalDendaOpsen;
   
-  // 4. Susun response
+  // 5. Susun response
   const data: DetailPajakResponse = {
     nopol: kendaraan.no_polisi,
     tahun_rakitan: kendaraan.th_rakitan,
     terakhir_bayar: kendaraan.tg_akhir_pkb,
     jarak,
     njkb: {
-      nilai_jual: formatRupiah(Math.round(kendaraan.njkb.nilai_jual)),
-      bobot: Number(kendaraan.njkb.bobot),
+      nilai_jual: kendaraan.njkb.nilai_jual,
+      bobot: kendaraan.njkb.bobot,
     },
     tagihan: {
       total: {

@@ -9,6 +9,7 @@ import {
   DetailKendaraanResponse
 } from './kendaraan.type';
 import {formatDate} from '../../utils/date.util';
+import {formatRupiah} from '../../utils/number.util';
 
 /**
  * Get all kendaraan
@@ -52,7 +53,7 @@ export async function getAllKendaraan(
     th_rakitan: data.th_rakitan,
     jumlah_cc: data.jumlah_cc,
     warna_kb: data.warna_kb,
-    tg_akhir_pkb: data.tg_akhir_pkb,
+    tg_akhir_pkb: formatDate(data.tg_akhir_pkb),
     kd_plat: data.kd_plat,
     no_polisi: data.no_polisi,
     kd_merek_kb: data.kd_merek_kb
@@ -115,8 +116,8 @@ export async function getKendaraanByNopol(
     kd_merek_kb: kendaraan.kd_merek_kb,
     kd_bbm: kendaraan.kd_bbm,
     njkb: {
-      nilai_jual: cekNjkb?.nilai_jual || 0,
-      bobot: cekNjkb?.bobot || 0
+      nilai_jual: formatRupiah(Math.round(cekNjkb?.nilai_jual || 0)),
+      bobot: Number(cekNjkb?.bobot || 0)
     },
     lokasi_transaksi_terakhir: {
       kd_lokasi: kendaraan.kd_lokasi,
