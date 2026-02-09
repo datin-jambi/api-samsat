@@ -113,6 +113,7 @@ export async function getKendaraanByNopol(
     jumlah_cc: kendaraan.jumlah_cc,
     warna_kb: kendaraan.warna_kb,
     tg_akhir_pkb: formatDate(kendaraan.tg_akhir_pkb),
+    tg_akhir_stnk: formatDate(kendaraan.tg_akhir_stnk),
     kd_plat: Number(kendaraan.kd_plat),
     no_polisi: kendaraan.no_polisi,
     kd_merek_kb: Number(kendaraan.kd_merek_kb),
