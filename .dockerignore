@@ -1,0 +1,60 @@
+# Node modules
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build output
+dist
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Testing
+coverage
+.nyc_output
+
+# Logs
+logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+.cache
+
+# Documentation
+README.md
+docs
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose*.yml
+
+# ESLint & TypeScript
+.eslintrc*
+.prettierrc
+# NOTE: tsconfig.json dan eslint.config.mjs DIPERLUKAN untuk build!
+
+# Test files
+*.test.ts
+*.spec.ts
+test
+tests
+__tests__
