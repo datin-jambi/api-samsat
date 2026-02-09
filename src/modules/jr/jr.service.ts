@@ -70,6 +70,12 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
   const cc = kendaraan.jumlah_cc.toString();
   const kodePlat = String(kendaraan.kd_plat);
   const tglAkhirPkb = kendaraan.tg_akhir_pkb; // format YYYY-MM-DD
+  
+  // Validasi tanggal wajib ada
+  if (!tglAkhirPkb) {
+    throw new Error('Data tanggal akhir PKB tidak ditemukan untuk kendaraan ini');
+  }
+  
   const masaLakuYad = hitungMasaLakuYangAkanDatang(tglAkhirPkb);
   
   // Cek apakah kendaraan listrik (kode 5)
@@ -99,12 +105,9 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
     ],
   };
 
-  console.log('Request Body JR:', JSON.stringify(requestBody, null, 2));
-
   // 4. Hit API JR eksternal
   try {
-    console.log('Menghubungi API JR di:', env.URL_JR);
-    
+
     // Tambahkan timeout controller  
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 detik timeout
@@ -120,8 +123,6 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
     
     clearTimeout(timeoutId);
 
-    console.log('Response Status:', response.status, response.statusText);
-
     // Cek status HTTP
     if (!response.ok) {
       const errorText = await response.text();
@@ -131,7 +132,6 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
 
     // 5. Parse JSON response
     const data = await response.json() as JrApiResponse[];
-    console.log('Response Data JR:', JSON.stringify(data, null, 2));
 
     // Validasi response
     if (!data || data.length === 0) {

@@ -30,8 +30,19 @@ export async function getPajakByNopol(
   const nilaiJual = Math.round(njkbData?.nilai_jual || 0);
   const bobot = Number(njkbData?.bobot || 0);
 
-  // 3. Hitung periode pajak yang harus dibayar
+  // 3. Validasi tanggal terakhir bayar
+  if (!kendaraan.tg_akhir_pkb) {
+    throw new Error('Data tanggal terakhir bayar (tg_akhir_pkb) tidak ditemukan');
+  }
+
+  // Parse tanggal - kendaraan.tg_akhir_pkb adalah string dari service
   const terakhirBayar = new Date(kendaraan.tg_akhir_pkb);
+  
+  // Validasi apakah date valid
+  if (isNaN(terakhirBayar.getTime())) {
+    throw new Error(`Format tanggal terakhir bayar tidak valid: ${kendaraan.tg_akhir_pkb}`);
+  }
+  
   const sekarang = new Date();
   
   // Hitung jarak waktu dari terakhir bayar

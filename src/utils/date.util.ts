@@ -6,8 +6,16 @@
 
 /**
  * Format tanggal ke string YYYY-MM-DD
+ * Return null jika date tidak valid
  */
-export function formatDate(date: Date): string {
+export function formatDate(date: Date | null | undefined): string | null {
+  if (!date) return null;
+  
+  // Validasi apakah date adalah Date object yang valid
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    return null;
+  }
+  
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');

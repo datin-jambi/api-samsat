@@ -110,6 +110,7 @@ export async function getDetailKendaraan(
       jumlah_cc,
       warna_kb,
       tg_akhir_pkb,
+      tg_akhir_stnk,
       kd_plat,
       no_polisi,
       kd_merek_kb,
