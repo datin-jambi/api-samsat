@@ -234,11 +234,11 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
     
     // Generic fetch error
     throw new Error(
-      `Gagal terhubung ke API JR. ` +
+      'Gagal terhubung ke API JR. ' +
       `Error: ${error.message}. ` +
       `Cause: ${error.cause?.code || error.cause?.message || 'Unknown'}. ` +
       `URL: ${env.URL_JR}. ` +
-      `Periksa: (1) Koneksi internet, (2) URL API benar, (3) Server API aktif, (4) Firewall tidak blocking`
+      'Periksa: (1) Koneksi internet, (2) URL API benar, (3) Server API aktif, (4) Firewall tidak blocking'
     );
   }
 }
