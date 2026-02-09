@@ -35,4 +35,7 @@ export const env = {
 
   // Security
   API_KEY: validateEnv('API_KEY'),
+
+  // External Services
+  URL_JR: validateEnv('URL_JR'),
 };

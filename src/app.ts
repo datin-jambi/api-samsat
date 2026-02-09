@@ -9,6 +9,7 @@ import { logger } from './utils/logger.util';
 // Import routes
 import kendaraanRoutes from './modules/kendaraan/kendaraan.route';
 import pajakRoutes from './modules/pajak/pajak.route';
+import jrRoutes from './modules/jr/jr.route';
 
 /**
  * Create Express Application
@@ -65,6 +66,7 @@ export function createApp(): Application {
   // Register module routes
   app.use('/api/kendaraan', kendaraanRoutes);
   app.use('/api/pajak', pajakRoutes);
+  app.use('/api/jr', jrRoutes);
 
   // ==========================================
   // ERROR HANDLERS
