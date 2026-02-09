@@ -55,7 +55,7 @@ Server running di `http://localhost:3000`
 
 ##  Deployment dengan Docker
 
-Gunakan **satu file pp.bat** untuk semua keperluan deployment:
+Gunakan **satu file `app.bat`** untuk semua keperluan deployment:
 
 ### Commands Available
 
