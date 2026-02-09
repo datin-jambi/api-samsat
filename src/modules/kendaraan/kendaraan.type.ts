@@ -33,6 +33,7 @@ export interface DetailKendaraan {
   no_polisi: string,
   kd_merek_kb: number,
   kd_bbm: string,
+  kd_jenis_kb: string,
   bbm: {
     kode: number,
     nama: string,
@@ -65,6 +66,7 @@ export interface DetailKendaraanResponse {
   warna_kb: string,
   tg_akhir_pkb: string | null,
   tg_akhir_stnk: string | null,
+  kd_jenis_kb: string,
   kd_plat: number,
   no_polisi: string,
   kd_merek_kb: number,
@@ -80,6 +82,15 @@ export interface DetailKendaraanResponse {
     kd_lokasi: string,
     nama: string,
   }
+}
+
+export interface PnbpResponse {
+  nopol: string,
+  kd_jenis_kb: string,
+  tg_akhir_stnk: string | null,
+  pnbp_tnkb: string,
+  pnbp_stnk: string,
+  total_pnbp: string
 }
 
 

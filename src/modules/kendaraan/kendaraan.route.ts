@@ -31,7 +31,7 @@ router.post(
 router.post(
   '/pnbp', 
   validate(getKendaraanByNopolSchema),
-  kendaraanController.getKendaraanByNopol
+  kendaraanController.getPnbpKendaraan
 );
 
 export default router;

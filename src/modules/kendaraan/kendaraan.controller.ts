@@ -42,11 +42,11 @@ export async function getAllKendaraan(req: Request, res: Response): Promise<void
 
     // Kirim response dengan pagination
     successResponseWithPagination(res, kendaraanList, pagination, Message.DATA_FOUND);
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMessage = process.env.NODE_ENV === 'development' 
-      ? error.message 
+      ? (error instanceof Error ? error.message : String(error))
       : Message.INTERNAL_ERROR;
-    errorResponse(res, errorMessage, process.env.NODE_ENV === 'development' ? { detail: error.message } : undefined);
+    errorResponse(res, errorMessage, process.env.NODE_ENV === 'development' ? { detail: error instanceof Error ? error.message : String(error) } : undefined);
   }
 }
 
@@ -75,10 +75,39 @@ export async function getKendaraanByNopol(req: Request, res: Response): Promise<
 
     // Kirim response
     successResponse(res, kendaraan, Message.DATA_FOUND);
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMessage = process.env.NODE_ENV === 'development' 
-      ? error.message 
+      ? (error instanceof Error ? error.message : String(error))
       : Message.INTERNAL_ERROR;
-    errorResponse(res, errorMessage, process.env.NODE_ENV === 'development' ? { detail: error.message } : undefined);
+    errorResponse(res, errorMessage, process.env.NODE_ENV === 'development' ? { detail: error instanceof Error ? error.message : String(error) } : undefined);
+  }
+}
+
+export async function getPnbpKendaraan(req: Request, res: Response): Promise<void> {
+  try {
+    const { nopol } = req.body;
+
+    // Validasi input
+    if (!nopol) {
+      badRequestResponse(res, 'Nopol tidak boleh kosong');
+      return;
+    }
+
+    // Panggil service
+    const kendaraan = await kendaraanService.getPnbpKendaraan(nopol);
+
+    // Cek hasil
+    if (!kendaraan) {
+      notFoundResponse(res, 'Kendaraan tidak ditemukan');
+      return;
+    }
+
+    // Kirim response
+    successResponse(res, kendaraan, Message.DATA_FOUND);
+  } catch (error: unknown) {
+    const errorMessage = process.env.NODE_ENV === 'development' 
+      ? (error instanceof Error ? error.message : String(error))
+      : Message.INTERNAL_ERROR;
+    errorResponse(res, errorMessage, process.env.NODE_ENV === 'development' ? { detail: error instanceof Error ? error.message : String(error) } : undefined);
   }
 }

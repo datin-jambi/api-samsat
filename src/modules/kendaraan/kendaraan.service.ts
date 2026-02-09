@@ -7,7 +7,8 @@ import {
 } from './kendaraan.query';
 import { 
   KendaraanResponse,
-  DetailKendaraanResponse
+  DetailKendaraanResponse,
+  PnbpResponse
 } from './kendaraan.type';
 import {formatDate} from '../../utils/date.util';
 import {formatRupiah} from '../../utils/number.util';
@@ -114,6 +115,7 @@ export async function getKendaraanByNopol(
     warna_kb: kendaraan.warna_kb,
     tg_akhir_pkb: formatDate(kendaraan.tg_akhir_pkb),
     tg_akhir_stnk: formatDate(kendaraan.tg_akhir_stnk),
+    kd_jenis_kb: kendaraan.kd_jenis_kb,
     kd_plat: Number(kendaraan.kd_plat),
     no_polisi: kendaraan.no_polisi,
     kd_merek_kb: Number(kendaraan.kd_merek_kb),
@@ -134,3 +136,81 @@ export async function getKendaraanByNopol(
   return data;
 }
 
+/**
+ * Get PNBP Kendaraan
+ * Menghitung PNBP TNKB dan PNBP STNK
+ */
+export async function getPnbpKendaraan(
+  nopol: string
+): Promise<PnbpResponse | null> {
+  // 1. Ambil data kendaraan
+  let kendaraan = await getDetailKendaraan(nopol, '', 't_trnkb', '');
+  
+  if (!kendaraan) {
+    kendaraan = await getDetailKendaraan(nopol, '', 't_mstkb', '');
+  }
+  
+  if (!kendaraan) {
+    kendaraan = await getDetailKendaraan(nopol, '', 'tt_trnkb', '');
+  }
+  
+  if (!kendaraan) {
+    return null;
+  }
+
+  // 2. Validasi tanggal STNK
+  if (!kendaraan.tg_akhir_stnk) {
+    throw new Error('Data tanggal akhir STNK tidak ditemukan');
+  }
+
+  const tglAkhirStnk = new Date(kendaraan.tg_akhir_stnk);
+  const sekarang = new Date();
+  
+  // 3. Hitung status STNK
+  const sudahHabis = tglAkhirStnk < sekarang;
+  const tahunStnk = tglAkhirStnk.getFullYear();
+  const tahunSekarang = sekarang.getFullYear();
+  const akanHabisTahunIni = tahunStnk === tahunSekarang;
+  
+  // Hitung hari sebelum habis (null jika sudah habis)
+  let hariSebelumHabis: number | null = null;
+  if (!sudahHabis) {
+    const selisihMs = tglAkhirStnk.getTime() - sekarang.getTime();
+    hariSebelumHabis = Math.ceil(selisihMs / (1000 * 60 * 60 * 24));
+  }
+  
+  // Perlu cetak STNK baru jika dalam 90 hari sebelum habis
+  const perluCetakBaru = !sudahHabis && hariSebelumHabis !== null && hariSebelumHabis <= 90;
+  
+  // 4. Hitung PNBP TNKB
+  const perlitunganPnbpTnkb = sudahHabis || akanHabisTahunIni;
+  let pnbpTnkb = 0;
+  
+  if (perlitunganPnbpTnkb) {
+    // Roda 2 (kd_jenis_kb == "R") = 60000
+    // Roda 4 (lainnya) = 100000
+    pnbpTnkb = kendaraan.kd_jenis_kb === 'R' ? 60000 : 100000;
+  }
+  
+  // 5. Hitung PNBP STNK
+  let pnbpStnk = 0;
+  
+  if (perlitunganPnbpTnkb && (sudahHabis || perluCetakBaru)) {
+    pnbpStnk = 200000;
+  }
+  
+  // 6. Total PNBP
+  const totalPnbp = pnbpTnkb + pnbpStnk;
+  
+  // 7. Susun response
+  const data: PnbpResponse = {
+    nopol: kendaraan.no_polisi,
+    kd_jenis_kb: kendaraan.kd_jenis_kb,
+    tg_akhir_stnk: formatDate(tglAkhirStnk),
+    pnbp_tnkb: formatRupiah(pnbpTnkb),
+    pnbp_stnk: formatRupiah(pnbpStnk),
+    total_pnbp: formatRupiah(totalPnbp)
+  };
+
+  return data;
+}

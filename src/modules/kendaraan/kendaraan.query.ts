@@ -115,7 +115,8 @@ export async function getDetailKendaraan(
       no_polisi,
       kd_merek_kb,
       kd_lokasi,
-      kd_bbm
+      kd_bbm,
+      kd_jenis_kb
       ${select ? ',' + select : ''}
     FROM ${from}
     WHERE UPPER(no_polisi) = UPPER($1)
