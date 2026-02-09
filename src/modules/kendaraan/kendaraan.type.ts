@@ -15,9 +15,9 @@ export interface Kendaraan {
   jumlah_cc: number,
   warna_kb: string,
   tg_akhir_pkb: Date,
-  kd_plat: string,
+  kd_plat: number,
   no_polisi: string,
-  kd_merek_kb: string
+  kd_merek_kb: number
 }
 
 export interface DetailKendaraan {
@@ -28,12 +28,12 @@ export interface DetailKendaraan {
   jumlah_cc: number,
   warna_kb: string,
   tg_akhir_pkb: Date,
-  kd_plat: string,
+  kd_plat: number,
   no_polisi: string,
-  kd_merek_kb: string,
+  kd_merek_kb: number,
   kd_bbm: string,
   bbm: {
-    kode: string,
+    kode: number,
     nama: string,
   },
   kd_lokasi: string
@@ -50,9 +50,9 @@ export interface KendaraanResponse {
   jumlah_cc: number,
   warna_kb: string,
   tg_akhir_pkb: string,
-  kd_plat: string,
+  kd_plat: number,
   no_polisi: string,
-  kd_merek_kb: string
+  kd_merek_kb: number
 }
 
 export interface DetailKendaraanResponse {

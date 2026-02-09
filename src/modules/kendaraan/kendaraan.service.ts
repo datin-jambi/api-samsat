@@ -55,9 +55,9 @@ export async function getAllKendaraan(
     jumlah_cc: data.jumlah_cc,
     warna_kb: data.warna_kb,
     tg_akhir_pkb: formatDate(data.tg_akhir_pkb),
-    kd_plat: data.kd_plat,
+    kd_plat: Number(data.kd_plat),
     no_polisi: data.no_polisi,
-    kd_merek_kb: data.kd_merek_kb
+    kd_merek_kb: Number(data.kd_merek_kb)
   }));
 
   return data;
@@ -104,8 +104,6 @@ export async function getKendaraanByNopol(
 
   const cekNjkb = await getNjkbKendaraanQuery(kendaraan.kd_merek_kb, kendaraan.th_rakitan);
   const ceknamaBbm = await getNamaBbm(kendaraan.kd_bbm);
-
-  console.log( 'ceknamaBbm', ceknamaBbm);
 
   const data: DetailKendaraanResponse = {
     nm_merek_kb: kendaraan.nm_merek_kb,

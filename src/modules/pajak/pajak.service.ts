@@ -128,6 +128,31 @@ export async function getPajakByNopol(
     totalDendaOpsen += dendaOpsen;
   }
   
+  // Batasi maksimal 6 periode terakhir
+  const MAX_PERIODE = 6;
+  if (rincian.length > MAX_PERIODE) {
+    // Ambil 6 periode terakhir
+    rincian.splice(0, rincian.length - MAX_PERIODE);
+    
+    // Hitung ulang total dari 6 periode terakhir
+    totalPokok = 0;
+    totalDenda = 0;
+    totalOpsen = 0;
+    totalDendaOpsen = 0;
+    
+    rincian.forEach(item => {
+      // Parse kembali dari format rupiah ke number
+      const parseRupiah = (str: string): number => {
+        return Number(str.replace(/Rp\s?/g, '').replace(/\./g, '').replace(/,/g, '.'));
+      };
+      
+      totalPokok += parseRupiah(item.pkb.pokok);
+      totalDenda += parseRupiah(item.pkb.denda);
+      totalOpsen += parseRupiah(item.opsen.opsen);
+      totalDendaOpsen += parseRupiah(item.opsen.denda_opsen);
+    });
+  }
+  
   const grandTotal = totalPokok + totalDenda + totalOpsen + totalDendaOpsen;
   
   // 5. Susun response

@@ -18,7 +18,7 @@ import {
  */
 // Get NJKB kendaraan
 export async function getNjkbKendaraanQuery(
-  kd_merek_kb: string,
+  kd_merek_kb: number,
   th_rakitan: number
 ): Promise<any> {
   const sql = `
