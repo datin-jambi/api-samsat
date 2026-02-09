@@ -32,6 +32,10 @@ export interface DetailKendaraan {
   no_polisi: string,
   kd_merek_kb: string,
   kd_bbm: string,
+  bbm: {
+    kode: string,
+    nama: string,
+  },
   kd_lokasi: string
 }
 
@@ -59,10 +63,13 @@ export interface DetailKendaraanResponse {
   jumlah_cc: number,
   warna_kb: string,
   tg_akhir_pkb: string,
-  kd_plat: string,
+  kd_plat: number,
   no_polisi: string,
-  kd_merek_kb: string,
-  kd_bbm: string,
+  kd_merek_kb: number,
+  bbm: {
+    kode: number,
+    nama: string,
+  },
   njkb: {
     nilai_jual: string,
     bobot: number,

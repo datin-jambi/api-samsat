@@ -2,7 +2,8 @@ import {
   getAllKendaraanQuery,
   getDetailKendaraan,
   getNjkbKendaraanQuery,
-  getLokasiTransaksiTerakhirKendaraan
+  getLokasiTransaksiTerakhirKendaraan,
+  getNamaBbm
 } from './kendaraan.query';
 import { 
   KendaraanResponse,
@@ -102,6 +103,9 @@ export async function getKendaraanByNopol(
   const lokasiTransaksiTerakhir = await getLokasiTransaksiTerakhirKendaraan(kendaraan.kd_lokasi);
 
   const cekNjkb = await getNjkbKendaraanQuery(kendaraan.kd_merek_kb, kendaraan.th_rakitan);
+  const ceknamaBbm = await getNamaBbm(kendaraan.kd_bbm);
+
+  console.log( 'ceknamaBbm', ceknamaBbm);
 
   const data: DetailKendaraanResponse = {
     nm_merek_kb: kendaraan.nm_merek_kb,
@@ -111,10 +115,13 @@ export async function getKendaraanByNopol(
     jumlah_cc: kendaraan.jumlah_cc,
     warna_kb: kendaraan.warna_kb,
     tg_akhir_pkb: formatDate(kendaraan.tg_akhir_pkb),
-    kd_plat: kendaraan.kd_plat,
+    kd_plat: Number(kendaraan.kd_plat),
     no_polisi: kendaraan.no_polisi,
-    kd_merek_kb: kendaraan.kd_merek_kb,
-    kd_bbm: kendaraan.kd_bbm,
+    kd_merek_kb: Number(kendaraan.kd_merek_kb),
+    bbm: {
+      kode: Number(kendaraan.kd_bbm),
+      nama: ceknamaBbm || 'BBM tidak ditemukan'
+    },
     njkb: {
       nilai_jual: formatRupiah(Math.round(cekNjkb?.nilai_jual || 0)),
       bobot: Number(cekNjkb?.bobot || 0)

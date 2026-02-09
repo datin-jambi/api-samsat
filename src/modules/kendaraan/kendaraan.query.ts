@@ -47,6 +47,19 @@ export async function getLokasiTransaksiTerakhirKendaraan(
   return result ? result.nm_lokasi : 'Lokasi tidak ditemukan';
 }
 
+export async function getNamaBbm(
+  kd_bbm: string
+): Promise<string> {
+  const sql = `
+    SELECT 
+      nm_bbm
+    FROM t_bbm
+    WHERE kd_bbm = $1
+    LIMIT 1`;
+  const result = await queryOne<any>(sql, [kd_bbm]);
+  return result ? result.nm_bbm : 'BBM tidak ditemukan';
+}
+
 
 /**
  * Get semua kendaraan dengan limit
@@ -111,3 +124,4 @@ export async function getDetailKendaraan(
   
   return queryOne<DetailKendaraan>(sql, [nopol]);
 }
+
