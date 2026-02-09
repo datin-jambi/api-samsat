@@ -99,15 +99,28 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
     ],
   };
 
+  console.log('Request Body JR:', JSON.stringify(requestBody, null, 2));
+
   // 4. Hit API JR eksternal
   try {
+    console.log('Menghubungi API JR di:', env.URL_JR);
+    
+    // Tambahkan timeout controller  
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 detik timeout
+    
     const response = await fetch(env.URL_JR, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
+      signal: controller.signal,
     });
+    
+    clearTimeout(timeoutId);
+
+    console.log('Response Status:', response.status, response.statusText);
 
     // Cek status HTTP
     if (!response.ok) {
@@ -118,6 +131,7 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
 
     // 5. Parse JSON response
     const data = await response.json() as JrApiResponse[];
+    console.log('Response Data JR:', JSON.stringify(data, null, 2));
 
     // Validasi response
     if (!data || data.length === 0) {
@@ -184,18 +198,33 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
     return result;
   } catch (error: any) {
     console.error('Error di getJrByNopol:', error);
+    console.error('Error cause:', error.cause);
+    
+    // Timeout error
+    if (error.name === 'AbortError') {
+      throw new Error('Request ke API JR timeout setelah 30 detik. Server tidak merespon');
+    }
     
     // Network error atau timeout
     if (error.cause?.code === 'ENOTFOUND') {
-      throw new Error('Tidak dapat terhubung ke server API JR. Pastikan URL sudah benar dan server aktif');
+      throw new Error('Domain API JR tidak ditemukan. Pastikan URL sudah benar: ' + env.URL_JR);
     }
     
     if (error.cause?.code === 'ECONNREFUSED') {
-      throw new Error('Koneksi ke API JR ditolak. Pastikan server API JR sedang berjalan');
+      throw new Error('Koneksi ke API JR ditolak. Server mungkin tidak aktif atau port salah');
     }
     
     if (error.cause?.code === 'ETIMEDOUT') {
       throw new Error('Timeout saat menghubungi API JR. Coba lagi nanti');
+    }
+    
+    if (error.cause?.code === 'ECONNRESET') {
+      throw new Error('Koneksi ke API JR terputus. Server mungkin memutuskan koneksi');
+    }
+    
+    // SSL/TLS errors
+    if (error.cause?.code === 'CERT_HAS_EXPIRED' || error.cause?.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
+      throw new Error('SSL Certificate API JR bermasalah. Hubungi penyedia API JR');
     }
     
     // Jika sudah error message yang jelas, langsung throw
@@ -204,6 +233,12 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
     }
     
     // Generic fetch error
-    throw new Error(`Gagal mengakses API JR: ${error.message}. Periksa koneksi internet dan pastikan URL API benar: ${env.URL_JR}`);
+    throw new Error(
+      `Gagal terhubung ke API JR. ` +
+      `Error: ${error.message}. ` +
+      `Cause: ${error.cause?.code || error.cause?.message || 'Unknown'}. ` +
+      `URL: ${env.URL_JR}. ` +
+      `Periksa: (1) Koneksi internet, (2) URL API benar, (3) Server API aktif, (4) Firewall tidak blocking`
+    );
   }
 }
