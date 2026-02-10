@@ -115,7 +115,7 @@ echo [9/9] Health check...
 timeout /t 5 /nobreak >nul
 set RETRY=0
 :deploy_health_loop
-curl -s -o nul http://localhost:3000/health 2>nul && goto :deploy_success
+curl -s -o nul http://localhost:3333/health 2>nul && goto :deploy_success
 set /a RETRY+=1
 if %RETRY% GEQ 10 (
     echo ERROR: Health check failed!
@@ -136,7 +136,7 @@ echo ==========================================
 echo   DEPLOYMENT SUCCESS!
 echo ==========================================
 echo.
-echo Application: http://localhost:3000
+echo Application: http://localhost:3333
 echo Rollback: app.bat rollback %TIMESTAMP%
 echo.
 goto :end
@@ -183,7 +183,7 @@ if exist "%BACKUP_DIR%\%APP_NAME%_%TS%.tar" docker load -i "%BACKUP_DIR%\%APP_NA
 echo Starting...
 docker-compose -f docker-compose.prod.yml up -d
 timeout /t 5 /nobreak >nul
-curl -s -o nul http://localhost:3000/health 2>nul && (
+curl -s -o nul http://localhost:3333/health 2>nul && (
     echo Rollback SUCCESS!
 ) || (
     echo Rollback completed but health check failed
@@ -225,7 +225,7 @@ echo.
 echo Service Status:
 docker-compose -f docker-compose.prod.yml ps
 echo.
-curl -s http://localhost:3000/health 2>nul && (
+curl -s http://localhost:3333/health 2>nul && (
     echo [OK] Application is healthy
 ) || (
     echo [ERROR] Application not responding
