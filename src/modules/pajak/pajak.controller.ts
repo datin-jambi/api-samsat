@@ -8,17 +8,16 @@ import {
 import { Message } from '../../constants/message';
 import * as PajakService from './pajak.service';
 
-
 /**
- * GET /api/pajak/detail
- * Get pajak by nopol
+ * GET /api/pajak/detail?nopol=xxx
+ * Get pajak by nopol via query parameter (RESTful way)
  */
-export async function getPajakByNopol(req: Request, res: Response): Promise<void> {
+export async function getPajakByNopolQuery(req: Request, res: Response): Promise<void> {
   try {
-    const { nopol } = req.body;
+    const { nopol } = req.query;
 
-    // Validasi input
-    if (!nopol) {
+    // Validasi input (sudah ter-handle di validation middleware)
+    if (!nopol || typeof nopol !== 'string') {
       badRequestResponse(res, 'Nopol tidak boleh kosong');
       return;
     }

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import * as pajakController from './pajak.controller';
 import { validate } from '../../middlewares/validate.middleware';
 import { 
-  getPajakByNopolSchema 
+  getPajakByNopolQuerySchema
 } from './pajak.validation';
 
 /**
@@ -12,12 +12,11 @@ import {
  */
 const router = Router();
 
-
-// POST /api/pajak/detail
-router.post(
-  '/detail', 
-  validate(getPajakByNopolSchema),
-  pajakController.getPajakByNopol
+// GET /api/pajak/detail?nopol=xxx (NEW - Recommended)
+router.get(
+  '/detail',
+  validate(getPajakByNopolQuerySchema),
+  pajakController.getPajakByNopolQuery
 );
 
 export default router;

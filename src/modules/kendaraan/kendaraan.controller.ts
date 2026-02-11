@@ -51,39 +51,6 @@ export async function getAllKendaraan(req: Request, res: Response): Promise<void
 }
 
 /**
- * POST /api/kendaraan/detail (DEPRECATED - gunakan GET)
- * Get kendaraan by nopol via POST body
- */
-export async function getKendaraanByNopol(req: Request, res: Response): Promise<void> {
-  try {
-    const { nopol } = req.body;
-
-    // Validasi input
-    if (!nopol) {
-      badRequestResponse(res, 'Nopol tidak boleh kosong');
-      return;
-    }
-
-    // Panggil service
-    const kendaraan = await kendaraanService.getKendaraanByNopol(nopol);
-
-    // Cek hasil
-    if (!kendaraan) {
-      notFoundResponse(res, 'Kendaraan tidak ditemukan');
-      return;
-    }
-
-    // Kirim response
-    successResponse(res, kendaraan, Message.DATA_FOUND);
-  } catch (error: unknown) {
-    const errorMessage = process.env.NODE_ENV === 'development' 
-      ? (error instanceof Error ? error.message : String(error))
-      : Message.INTERNAL_ERROR;
-    errorResponse(res, errorMessage, process.env.NODE_ENV === 'development' ? { detail: error instanceof Error ? error.message : String(error) } : undefined);
-  }
-}
-
-/**
  * GET /api/kendaraan/detail?nopol=xxx
  * Get kendaraan by nopol via query parameter (RESTful way)
  */
