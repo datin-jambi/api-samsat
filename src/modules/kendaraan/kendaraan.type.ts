@@ -88,9 +88,17 @@ export interface PnbpResponse {
   nopol: string,
   kd_jenis_kb: string,
   tg_akhir_stnk: string | null,
-  pnbp_tnkb: string,
-  pnbp_stnk: string,
-  total_pnbp: string
+  pnbp: {
+    stnk: {
+      status: boolean,
+      nominal: string
+    },
+    tnkb: {
+      status: boolean,
+      nominal: string
+    },
+    total: string
+  }
 }
 
 

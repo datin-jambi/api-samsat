@@ -12,6 +12,7 @@ import {
 } from './kendaraan.type';
 import {formatDate} from '../../utils/date.util';
 import {formatRupiah} from '../../utils/number.util';
+import {normalizeNopol} from '../../utils/string.util';
 
 /**
  * Get all kendaraan
@@ -67,12 +68,19 @@ export async function getAllKendaraan(
 
 /**
  * Get kendaraan by nopol
+ * 
+ * Normalize nopol sebelum query untuk konsistensi:
+ * - "BH 6869 IK" -> "BH6869IK"
+ * - "bh 6869 ik" -> "BH6869IK"
  */
 export async function getKendaraanByNopol(
   nopol: string
 ): Promise<DetailKendaraanResponse | null> {
+  // Normalize nopol (hapus spasi, uppercase)
+  const normalizedNopol = normalizeNopol(nopol);
+  
   let kendaraan = await getDetailKendaraan(
-    nopol,
+    normalizedNopol,
     '',
     't_trnkb',
     ''
@@ -80,7 +88,7 @@ export async function getKendaraanByNopol(
   // Kalau tidak ada, coba dari t_mstkb
   if (!kendaraan) {
     kendaraan = await getDetailKendaraan(
-      nopol,
+      normalizedNopol,
       '',
       't_mstkb',
       ''
@@ -90,7 +98,7 @@ export async function getKendaraanByNopol(
   // Kalau masih tidak ada, coba dari tt_trnkb
   if (!kendaraan) {
     kendaraan = await getDetailKendaraan(
-      nopol,
+      normalizedNopol,
       '',
       'tt_trnkb',
       ''
@@ -143,15 +151,18 @@ export async function getKendaraanByNopol(
 export async function getPnbpKendaraan(
   nopol: string
 ): Promise<PnbpResponse | null> {
+  // Normalize nopol (hapus spasi, uppercase)
+  const normalizedNopol = normalizeNopol(nopol);
+  
   // 1. Ambil data kendaraan
-  let kendaraan = await getDetailKendaraan(nopol, '', 't_trnkb', '');
+  let kendaraan = await getDetailKendaraan(normalizedNopol, '', 't_trnkb', '');
   
   if (!kendaraan) {
-    kendaraan = await getDetailKendaraan(nopol, '', 't_mstkb', '');
+    kendaraan = await getDetailKendaraan(normalizedNopol, '', 't_mstkb', '');
   }
   
   if (!kendaraan) {
-    kendaraan = await getDetailKendaraan(nopol, '', 'tt_trnkb', '');
+    kendaraan = await getDetailKendaraan(normalizedNopol, '', 'tt_trnkb', '');
   }
   
   if (!kendaraan) {
@@ -207,9 +218,17 @@ export async function getPnbpKendaraan(
     nopol: kendaraan.no_polisi,
     kd_jenis_kb: kendaraan.kd_jenis_kb,
     tg_akhir_stnk: formatDate(tglAkhirStnk),
-    pnbp_tnkb: formatRupiah(pnbpTnkb),
-    pnbp_stnk: formatRupiah(pnbpStnk),
-    total_pnbp: formatRupiah(totalPnbp)
+    pnbp: {
+      stnk: {
+        status: pnbpStnk > 0,
+        nominal: formatRupiah(pnbpStnk)
+      },
+      tnkb: {
+        status: pnbpTnkb > 0,
+        nominal: formatRupiah(pnbpTnkb)
+      },
+      total: formatRupiah(totalPnbp)
+    }
   };
 
   return data;

@@ -94,6 +94,11 @@ export async function getAllKendaraanQuery(
 
 /**
  * Get kendaraan by nopol
+ * 
+ * Query ini handle normalisasi nopol:
+ * - Hapus semua spasi di database (REPLACE)
+ * - Convert ke uppercase (UPPER)
+ * - Compare dengan input yang sudah dinormalisasi
  */
 export async function getDetailKendaraan(
   nopol: string,
@@ -119,7 +124,7 @@ export async function getDetailKendaraan(
       kd_jenis_kb
       ${select ? ',' + select : ''}
     FROM ${from}
-    WHERE UPPER(no_polisi) = UPPER($1)
+    WHERE UPPER(REPLACE(no_polisi, ' ', '')) = UPPER(REPLACE($1, ' ', ''))
     ${where ? 'AND ' + where : ''}
     LIMIT 1
   `;

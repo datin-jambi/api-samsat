@@ -3,7 +3,7 @@ import * as kendaraanController from './kendaraan.controller';
 import { validate } from '../../middlewares/validate.middleware';
 import { 
   getAllKendaraanSchema,
-  getKendaraanByNopolSchema 
+  getKendaraanByNopolQuerySchema
 } from './kendaraan.validation';
 
 /**
@@ -20,17 +20,18 @@ router.get(
   kendaraanController.getAllKendaraan
 );
 
-// POST /api/kendaraan/detail
-router.post(
-  '/detail', 
-  validate(getKendaraanByNopolSchema),
-  kendaraanController.getKendaraanByNopol
+// GET /api/kendaraan/detail?nopol=xxx (NEW - Recommended)
+router.get(
+  '/detail',
+  validate(getKendaraanByNopolQuerySchema),
+  kendaraanController.getKendaraanByNopolQuery
 );
 
-// POST /api/kendaraan/pnbp
-router.post(
+
+// GET /api/kendaraan/pnbp
+router.get(
   '/pnbp', 
-  validate(getKendaraanByNopolSchema),
+  validate(getKendaraanByNopolQuerySchema),
   kendaraanController.getPnbpKendaraan
 );
 
