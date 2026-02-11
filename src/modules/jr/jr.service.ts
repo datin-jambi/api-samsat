@@ -105,140 +105,182 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
     ],
   };
 
-  // 4. Hit API JR eksternal
-  try {
+  // 4. Hit API JR eksternal dengan retry mechanism
+  const maxRetries = 3;
+  const retryDelay = 2000; // 2 detik
+  let lastError: any;
 
-    // Tambahkan timeout controller  
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 detik timeout
-    
-    const response = await fetch(env.URL_JR, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-      signal: controller.signal,
-    });
-    
-    clearTimeout(timeoutId);
-
-    // Cek status HTTP
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API JR Error Response:', errorText);
-      throw new Error(`API JR mengembalikan error (${response.status}): ${errorText || response.statusText}`);
-    }
-
-    // 5. Parse JSON response
-    const data = await response.json() as JrApiResponse[];
-
-    // Validasi response
-    if (!data || data.length === 0) {
-      throw new Error('Response dari API JR kosong');
-    }
-
-    const jrData = data[0];
-
-    // 6. Cek status response
-    if (jrData.MODE !== 'OK') {
-      throw new Error(`API JR error: ${jrData.MSG}`);
-    }
-
-    // 7. Map response ke format yang lebih friendly
-    const result: JrResponse = {
-      ref_id: jrData.JR_REF_ID,
-      nopol: jrData.NOPOL,
-      golongan: jrData.KODE_GOLONGAN,
-      jenis: jrData.KODE_JENIS,
-      tarif_per_tahun: {
-        tahun_ke_0: {
-          kecelakaan_diri: jrData.NILAI_KD_0,
-          santunan_wafat: jrData.NILAI_SW_0,
-          dana_derma: jrData.NILAI_DD_0,
-          subtotal: jrData.NILAI_KD_0 + jrData.NILAI_SW_0 + jrData.NILAI_DD_0,
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      // Tambahkan timeout controller  
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 detik timeout
+      
+      const response = await fetch(env.URL_JR, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        tahun_ke_1: {
-          kecelakaan_diri: jrData.NILAI_KD_1,
-          santunan_wafat: jrData.NILAI_SW_1,
-          dana_derma: jrData.NILAI_DD_1,
-          subtotal: jrData.NILAI_KD_1 + jrData.NILAI_SW_1 + jrData.NILAI_DD_1,
-        },
-        tahun_ke_2: {
-          kecelakaan_diri: jrData.NILAI_KD_2,
-          santunan_wafat: jrData.NILAI_SW_2,
-          dana_derma: jrData.NILAI_DD_2,
-          subtotal: jrData.NILAI_KD_2 + jrData.NILAI_SW_2 + jrData.NILAI_DD_2,
-        },
-        tahun_ke_3: {
-          kecelakaan_diri: jrData.NILAI_KD_3,
-          santunan_wafat: jrData.NILAI_SW_3,
-          dana_derma: jrData.NILAI_DD_3,
-          subtotal: jrData.NILAI_KD_3 + jrData.NILAI_SW_3 + jrData.NILAI_DD_3,
-        },
-        tahun_ke_4: {
-          kecelakaan_diri: jrData.NILAI_KD_4,
-          santunan_wafat: jrData.NILAI_SW_4,
-          dana_derma: jrData.NILAI_DD_4,
-          subtotal: jrData.NILAI_KD_4 + jrData.NILAI_SW_4 + jrData.NILAI_DD_4,
-        },
-      },
-      total_tarif: {
-        kecelakaan_diri: jrData.NILAI_KD_0 + jrData.NILAI_KD_1 + jrData.NILAI_KD_2 + jrData.NILAI_KD_3 + jrData.NILAI_KD_4,
-        santunan_wafat: jrData.NILAI_SW_0 + jrData.NILAI_SW_1 + jrData.NILAI_SW_2 + jrData.NILAI_SW_3 + jrData.NILAI_SW_4,
-        dana_derma: jrData.NILAI_DD_0 + jrData.NILAI_DD_1 + jrData.NILAI_DD_2 + jrData.NILAI_DD_3 + jrData.NILAI_DD_4,
-        total: 
-          jrData.NILAI_KD_0 + jrData.NILAI_KD_1 + jrData.NILAI_KD_2 + jrData.NILAI_KD_3 + jrData.NILAI_KD_4 +
-          jrData.NILAI_SW_0 + jrData.NILAI_SW_1 + jrData.NILAI_SW_2 + jrData.NILAI_SW_3 + jrData.NILAI_SW_4 +
-          jrData.NILAI_DD_0 + jrData.NILAI_DD_1 + jrData.NILAI_DD_2 + jrData.NILAI_DD_3 + jrData.NILAI_DD_4,
-      },
-      nilai_prorata: jrData.NILAI_PRORATA,
-    };
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+      
+        clearTimeout(timeoutId);
 
-    return result;
-  } catch (error: any) {
-    console.error('Error di getJrByNopol:', error);
-    console.error('Error cause:', error.cause);
-    
-    // Timeout error
-    if (error.name === 'AbortError') {
-      throw new Error('Request ke API JR timeout setelah 30 detik. Server tidak merespon');
+      // Cek status HTTP
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API JR Error Response:', errorText);
+        throw new Error(`API JR mengembalikan error (${response.status}): ${errorText || response.statusText}`);
+      }
+
+      // 5. Parse JSON response
+      const data = await response.json() as JrApiResponse[];
+
+      // Validasi response
+      if (!data || data.length === 0) {
+        throw new Error('Response dari API JR kosong');
+      }
+
+      const jrData = data[0];
+
+      // 6. Cek status response
+      if (jrData.MODE !== 'OK') {
+        throw new Error(`API JR error: ${jrData.MSG}`);
+      }
+
+      // 7. Map response ke format yang lebih friendly
+      const result: JrResponse = {
+        ref_id: jrData.JR_REF_ID,
+        nopol: jrData.NOPOL,
+        golongan: jrData.KODE_GOLONGAN,
+        jenis: jrData.KODE_JENIS,
+        tarif_per_tahun: [
+          {
+            tahun: 1,
+            kecelakaan_diri: jrData.NILAI_KD_0,
+            santunan_wafat: jrData.NILAI_SW_0,
+            dana_derma: jrData.NILAI_DD_0,
+            subtotal: jrData.NILAI_KD_0 + jrData.NILAI_SW_0 + jrData.NILAI_DD_0,
+          },
+          {
+            tahun: 2,
+            kecelakaan_diri: jrData.NILAI_KD_1,
+            santunan_wafat: jrData.NILAI_SW_1,
+            dana_derma: jrData.NILAI_DD_1,
+            subtotal: jrData.NILAI_KD_1 + jrData.NILAI_SW_1 + jrData.NILAI_DD_1,
+          },
+          {
+            tahun: 3,
+            kecelakaan_diri: jrData.NILAI_KD_2,
+            santunan_wafat: jrData.NILAI_SW_2,
+            dana_derma: jrData.NILAI_DD_2,
+            subtotal: jrData.NILAI_KD_2 + jrData.NILAI_SW_2 + jrData.NILAI_DD_2,
+          },
+          {
+            tahun: 4,
+            kecelakaan_diri: jrData.NILAI_KD_3,
+            santunan_wafat: jrData.NILAI_SW_3,
+            dana_derma: jrData.NILAI_DD_3,
+            subtotal: jrData.NILAI_KD_3 + jrData.NILAI_SW_3 + jrData.NILAI_DD_3,
+          },
+          {
+            tahun: 5,
+            kecelakaan_diri: jrData.NILAI_KD_4,
+            santunan_wafat: jrData.NILAI_SW_4,
+            dana_derma: jrData.NILAI_DD_4,
+            subtotal: jrData.NILAI_KD_4 + jrData.NILAI_SW_4 + jrData.NILAI_DD_4,
+          },
+        ],
+        total_tarif: {
+          kecelakaan_diri: jrData.NILAI_KD_0 + jrData.NILAI_KD_1 + jrData.NILAI_KD_2 + jrData.NILAI_KD_3 + jrData.NILAI_KD_4,
+          santunan_wafat: jrData.NILAI_SW_0 + jrData.NILAI_SW_1 + jrData.NILAI_SW_2 + jrData.NILAI_SW_3 + jrData.NILAI_SW_4,
+          dana_derma: jrData.NILAI_DD_0 + jrData.NILAI_DD_1 + jrData.NILAI_DD_2 + jrData.NILAI_DD_3 + jrData.NILAI_DD_4,
+          total: 
+            jrData.NILAI_KD_0 + jrData.NILAI_KD_1 + jrData.NILAI_KD_2 + jrData.NILAI_KD_3 + jrData.NILAI_KD_4 +
+            jrData.NILAI_SW_0 + jrData.NILAI_SW_1 + jrData.NILAI_SW_2 + jrData.NILAI_SW_3 + jrData.NILAI_SW_4 +
+            jrData.NILAI_DD_0 + jrData.NILAI_DD_1 + jrData.NILAI_DD_2 + jrData.NILAI_DD_3 + jrData.NILAI_DD_4,
+        },
+        nilai_prorata: jrData.NILAI_PRORATA,
+      };
+
+      return result; // Success - keluar dari loop retry
+
+    } catch (error: any) {
+      lastError = error;
+      console.error(`Attempt ${attempt}/${maxRetries} failed:`, error.message);
+      
+      // Jika ini bukan attempt terakhir dan error bisa di-retry, tunggu sebelum retry
+      const isRetryableError = 
+        error.name === 'AbortError' ||
+        error.cause?.code === 'UND_ERR_CONNECT_TIMEOUT' ||
+        error.cause?.code === 'ETIMEDOUT' ||
+        error.cause?.code === 'ECONNRESET' ||
+        error.cause?.code === 'ECONNREFUSED';
+      
+      if (attempt < maxRetries && isRetryableError) {
+        console.log(`Retrying in ${retryDelay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        continue; // Lanjut ke attempt berikutnya
+      }
+      
+      // Jika bukan retryable error atau sudah attempt terakhir, throw error
+      break;
     }
-    
-    // Network error atau timeout
-    if (error.cause?.code === 'ENOTFOUND') {
-      throw new Error('Domain API JR tidak ditemukan. Pastikan URL sudah benar: ' + env.URL_JR);
-    }
-    
-    if (error.cause?.code === 'ECONNREFUSED') {
-      throw new Error('Koneksi ke API JR ditolak. Server mungkin tidak aktif atau port salah');
-    }
-    
-    if (error.cause?.code === 'ETIMEDOUT') {
-      throw new Error('Timeout saat menghubungi API JR. Coba lagi nanti');
-    }
-    
-    if (error.cause?.code === 'ECONNRESET') {
-      throw new Error('Koneksi ke API JR terputus. Server mungkin memutuskan koneksi');
-    }
-    
-    // SSL/TLS errors
-    if (error.cause?.code === 'CERT_HAS_EXPIRED' || error.cause?.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
-      throw new Error('SSL Certificate API JR bermasalah. Hubungi penyedia API JR');
-    }
-    
-    // Jika sudah error message yang jelas, langsung throw
-    if (error.message && !error.message.includes('fetch failed')) {
-      throw error;
-    }
-    
-    // Generic fetch error
+  }
+
+  // Jika sampai sini berarti semua retry gagal
+  const error = lastError;
+  console.error('All retry attempts failed. Last error:', error);
+  console.error('Error cause:', error.cause);
+  
+  // Timeout error from AbortController
+  if (error.name === 'AbortError') {
+    throw new Error('Request ke API JR timeout setelah 30 detik. Server tidak merespon. Sudah dicoba 3x.');
+  }
+  
+  // Undici connect timeout
+  if (error.cause?.code === 'UND_ERR_CONNECT_TIMEOUT') {
     throw new Error(
-      'Gagal terhubung ke API JR. ' +
-      `Error: ${error.message}. ` +
-      `Cause: ${error.cause?.code || error.cause?.message || 'Unknown'}. ` +
-      `URL: ${env.URL_JR}. ` +
-      'Periksa: (1) Koneksi internet, (2) URL API benar, (3) Server API aktif, (4) Firewall tidak blocking'
+      `Koneksi ke API JR timeout. Server ${env.URL_JR} tidak merespon. ` +
+      'Kemungkinan: (1) Server API lambat/down, (2) Firewall blocking, (3) Network issue. ' +
+      'Sudah dicoba 3x dengan delay.'
     );
   }
+  
+  // Network error atau timeout
+  if (error.cause?.code === 'ENOTFOUND') {
+    throw new Error('Domain API JR tidak ditemukan. Pastikan URL sudah benar: ' + env.URL_JR);
+  }
+  
+  if (error.cause?.code === 'ECONNREFUSED') {
+    throw new Error('Koneksi ke API JR ditolak. Server mungkin tidak aktif atau port salah. Sudah dicoba 3x.');
+  }
+  
+  if (error.cause?.code === 'ETIMEDOUT') {
+    throw new Error('Timeout saat menghubungi API JR. Server tidak merespon. Sudah dicoba 3x.');
+  }
+  
+  if (error.cause?.code === 'ECONNRESET') {
+    throw new Error('Koneksi ke API JR terputus. Server memutuskan koneksi. Sudah dicoba 3x.');
+  }
+  
+  // SSL/TLS errors
+  if (error.cause?.code === 'CERT_HAS_EXPIRED' || error.cause?.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
+    throw new Error('SSL Certificate API JR bermasalah. Hubungi penyedia API JR');
+  }
+  
+  // Jika sudah error message yang jelas, langsung throw
+  if (error.message && !error.message.includes('fetch failed')) {
+    throw error;
+  }
+  
+  // Generic fetch error
+  throw new Error(
+    'Gagal terhubung ke API JR setelah 3x percobaan. ' +
+    `Error: ${error.message}. ` +
+    `Cause: ${error.cause?.code || error.cause?.message || 'Unknown'}. ` +
+    `URL: ${env.URL_JR}. ` +
+    'Periksa: (1) Koneksi internet, (2) URL API benar, (3) Server API aktif, (4) Firewall tidak blocking'
+  );
 }

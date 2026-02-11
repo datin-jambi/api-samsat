@@ -59,6 +59,7 @@ export interface JrApiResponse {
  * Tarif JR per tahun
  */
 export interface TarifJr {
+  tahun: number;
   kecelakaan_diri: number;
   santunan_wafat: number;
   dana_derma: number;
@@ -73,13 +74,7 @@ export interface JrResponse {
   nopol: string;
   golongan: string;
   jenis: string;
-  tarif_per_tahun: {
-    tahun_ke_0: TarifJr;
-    tahun_ke_1: TarifJr;
-    tahun_ke_2: TarifJr;
-    tahun_ke_3: TarifJr;
-    tahun_ke_4: TarifJr;
-  };
+  tarif_per_tahun: TarifJr[];
   total_tarif: {
     kecelakaan_diri: number;
     santunan_wafat: number;
