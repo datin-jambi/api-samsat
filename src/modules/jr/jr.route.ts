@@ -2,7 +2,7 @@ import { Router } from 'express';
 import * as jrController from './jr.controller';
 import { validate } from '../../middlewares/validate.middleware';
 import { 
-  getJrByNopolSchema 
+  getJrByNopolQuerySchema
 } from './jr.validation';
 
 /** 
@@ -12,12 +12,11 @@ import {
  */
 const router = Router();
 
-
-// POST /api/jr/detail
-router.post(
-  '/detail', 
-  validate(getJrByNopolSchema),
-  jrController.getJrByNopol
+// GET /api/jr/detail?nopol=xxx (NEW - Recommended)
+router.get(
+  '/detail',
+  validate(getJrByNopolQuerySchema),
+  jrController.getJrByNopolQuery
 );
 
 export default router;

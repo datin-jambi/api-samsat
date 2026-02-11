@@ -8,17 +8,16 @@ import {
 import { Message } from '../../constants/message';
 import * as JrService from './jr.service';
 
-
 /**
- * GET /api/jr/detail
- * Get jr by nopol
+ * GET /api/jr/detail?nopol=xxx
+ * Get jr by nopol via query parameter (RESTful way)
  */
-export async function getJrByNopol(req: Request, res: Response): Promise<void> {
+export async function getJrByNopolQuery(req: Request, res: Response): Promise<void> {
   try {
-    const { nopol } = req.body;
+    const { nopol } = req.query;
 
-    // Validasi input
-    if (!nopol) {
+    // Validasi input (sudah ter-handle di validation middleware)
+    if (!nopol || typeof nopol !== 'string') {
       badRequestResponse(res, 'Nopol tidak boleh kosong');
       return;
     }
