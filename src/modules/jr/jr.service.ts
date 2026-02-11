@@ -3,6 +3,17 @@ import { getKendaraanByNopol } from '../kendaraan/kendaraan.service';
 import { JrApiRequest, JrApiResponse, JrResponse } from './jr.type';
 
 /**
+ * Type untuk network error
+ */
+interface NetworkError extends Error {
+  cause?: {
+    code?: string;
+    message?: string;
+  };
+  startTime?: number;
+}
+
+/**
  * Constants untuk API JR
  */
 const JR_CONSTANTS = {
@@ -106,15 +117,20 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
   };
 
   // 4. Hit API JR eksternal dengan retry mechanism
-  const maxRetries = 3;
-  const retryDelay = 2000; // 2 detik
-  let lastError: any;
+  const maxRetries = 5; // Tingkatkan ke 5x karena API sering timeout
+  const baseRetryDelay = 2000; // Base delay 2 detik
+  let lastError: unknown;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      // Tambahkan timeout controller  
+      console.log(`[JR API] Attempt ${attempt}/${maxRetries} - Calling ${env.URL_JR}`);
+      
+      // Tambahkan timeout controller dengan timeout lebih lama
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 detik timeout
+      const timeoutDuration = 60000; // 60 detik timeout (naik dari 30 detik)
+      const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
+      
+      const startTime = Date.now();
       
       const response = await fetch(env.URL_JR, {
         method: 'POST',
@@ -125,7 +141,10 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
         signal: controller.signal,
       });
       
-        clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
+      
+      const duration = Date.now() - startTime;
+      console.log(`[JR API] Response received in ${duration}ms`);
 
       // Cek status HTTP
       if (!response.ok) {
@@ -206,21 +225,25 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
 
       return result; // Success - keluar dari loop retry
 
-    } catch (error: any) {
-      lastError = error;
-      console.error(`Attempt ${attempt}/${maxRetries} failed:`, error.message);
+    } catch (err: unknown) {
+      lastError = err;
+      const errorObj = err as NetworkError;
+      const duration = Date.now() - (errorObj.startTime || Date.now());
+      console.error(`[JR API] Attempt ${attempt}/${maxRetries} failed after ${duration}ms:`, errorObj.message);
       
       // Jika ini bukan attempt terakhir dan error bisa di-retry, tunggu sebelum retry
       const isRetryableError = 
-        error.name === 'AbortError' ||
-        error.cause?.code === 'UND_ERR_CONNECT_TIMEOUT' ||
-        error.cause?.code === 'ETIMEDOUT' ||
-        error.cause?.code === 'ECONNRESET' ||
-        error.cause?.code === 'ECONNREFUSED';
+        errorObj.name === 'AbortError' ||
+        errorObj.cause?.code === 'UND_ERR_CONNECT_TIMEOUT' ||
+        errorObj.cause?.code === 'ETIMEDOUT' ||
+        errorObj.cause?.code === 'ECONNRESET' ||
+        errorObj.cause?.code === 'ECONNREFUSED';
       
       if (attempt < maxRetries && isRetryableError) {
-        console.log(`Retrying in ${retryDelay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+        const currentDelay = baseRetryDelay * Math.pow(2, attempt - 1);
+        console.log(`[JR API] Retrying in ${currentDelay}ms... (exponential backoff)`);
+        await new Promise(resolve => setTimeout(resolve, currentDelay));
         continue; // Lanjut ke attempt berikutnya
       }
       
@@ -230,13 +253,13 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
   }
 
   // Jika sampai sini berarti semua retry gagal
-  const error = lastError;
-  console.error('All retry attempts failed. Last error:', error);
-  console.error('Error cause:', error.cause);
+  const error = lastError as NetworkError;
+  console.error('[JR API] All retry attempts failed. Last error:', error);
+  console.error('[JR API] Error cause:', error.cause);
   
   // Timeout error from AbortController
   if (error.name === 'AbortError') {
-    throw new Error('Request ke API JR timeout setelah 30 detik. Server tidak merespon. Sudah dicoba 3x.');
+    throw new Error('Request ke API JR timeout setelah 60 detik. Server tidak merespon. Sudah dicoba 5x.');
   }
   
   // Undici connect timeout
@@ -244,7 +267,7 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
     throw new Error(
       `Koneksi ke API JR timeout. Server ${env.URL_JR} tidak merespon. ` +
       'Kemungkinan: (1) Server API lambat/down, (2) Firewall blocking, (3) Network issue. ' +
-      'Sudah dicoba 3x dengan delay.'
+      'Sudah dicoba 5x dengan exponential backoff (total ~62 detik).'
     );
   }
   
@@ -254,15 +277,15 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
   }
   
   if (error.cause?.code === 'ECONNREFUSED') {
-    throw new Error('Koneksi ke API JR ditolak. Server mungkin tidak aktif atau port salah. Sudah dicoba 3x.');
+    throw new Error('Koneksi ke API JR ditolak. Server mungkin tidak aktif atau port salah. Sudah dicoba 5x.');
   }
   
   if (error.cause?.code === 'ETIMEDOUT') {
-    throw new Error('Timeout saat menghubungi API JR. Server tidak merespon. Sudah dicoba 3x.');
+    throw new Error('Timeout saat menghubungi API JR. Server tidak merespon. Sudah dicoba 5x.');
   }
   
   if (error.cause?.code === 'ECONNRESET') {
-    throw new Error('Koneksi ke API JR terputus. Server memutuskan koneksi. Sudah dicoba 3x.');
+    throw new Error('Koneksi ke API JR terputus. Server memutuskan koneksi. Sudah dicoba 5x.');
   }
   
   // SSL/TLS errors
@@ -277,7 +300,7 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
   
   // Generic fetch error
   throw new Error(
-    'Gagal terhubung ke API JR setelah 3x percobaan. ' +
+    'Gagal terhubung ke API JR setelah 5x percobaan dengan exponential backoff. ' +
     `Error: ${error.message}. ` +
     `Cause: ${error.cause?.code || error.cause?.message || 'Unknown'}. ` +
     `URL: ${env.URL_JR}. ` +
