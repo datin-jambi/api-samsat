@@ -169,6 +169,8 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
       }
 
       // 7. Map response ke format yang lebih friendly
+      // Index 0 = Periode berjalan (tahun saat ini)
+      // Index 1-4 = Tunggakan tahun lalu (mundur ke belakang)
       const result: JrResponse = {
         ref_id: jrData.JR_REF_ID,
         nopol: jrData.NOPOL,
@@ -176,45 +178,45 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
         jenis: jrData.KODE_JENIS,
         tarif_per_tahun: [
           {
-            tahun: 1,
-            kecelakaan_diri: jrData.NILAI_KD_0,
-            santunan_wafat: jrData.NILAI_SW_0,
-            dana_derma: jrData.NILAI_DD_0,
+            keterangan: 'Periode Berjalan',
+            kartu_jr: jrData.NILAI_KD_0,
+            pokok_jr: jrData.NILAI_SW_0,
+            denda_jr: jrData.NILAI_DD_0,
             subtotal: jrData.NILAI_KD_0 + jrData.NILAI_SW_0 + jrData.NILAI_DD_0,
           },
           {
-            tahun: 2,
-            kecelakaan_diri: jrData.NILAI_KD_1,
-            santunan_wafat: jrData.NILAI_SW_1,
-            dana_derma: jrData.NILAI_DD_1,
+            keterangan: 'Tunggakan 1 tahun lalu',
+            kartu_jr: jrData.NILAI_KD_1,
+            pokok_jr: jrData.NILAI_SW_1,
+            denda_jr: jrData.NILAI_DD_1,
             subtotal: jrData.NILAI_KD_1 + jrData.NILAI_SW_1 + jrData.NILAI_DD_1,
           },
           {
-            tahun: 3,
-            kecelakaan_diri: jrData.NILAI_KD_2,
-            santunan_wafat: jrData.NILAI_SW_2,
-            dana_derma: jrData.NILAI_DD_2,
+            keterangan: 'Tunggakan 2 tahun lalu',
+            kartu_jr: jrData.NILAI_KD_2,
+            pokok_jr: jrData.NILAI_SW_2,
+            denda_jr: jrData.NILAI_DD_2,
             subtotal: jrData.NILAI_KD_2 + jrData.NILAI_SW_2 + jrData.NILAI_DD_2,
           },
           {
-            tahun: 4,
-            kecelakaan_diri: jrData.NILAI_KD_3,
-            santunan_wafat: jrData.NILAI_SW_3,
-            dana_derma: jrData.NILAI_DD_3,
+            keterangan: 'Tunggakan 3 tahun lalu',
+            kartu_jr: jrData.NILAI_KD_3,
+            pokok_jr: jrData.NILAI_SW_3,
+            denda_jr: jrData.NILAI_DD_3,
             subtotal: jrData.NILAI_KD_3 + jrData.NILAI_SW_3 + jrData.NILAI_DD_3,
           },
           {
-            tahun: 5,
-            kecelakaan_diri: jrData.NILAI_KD_4,
-            santunan_wafat: jrData.NILAI_SW_4,
-            dana_derma: jrData.NILAI_DD_4,
+            keterangan: 'Tunggakan 4 tahun lalu',
+            kartu_jr: jrData.NILAI_KD_4,
+            pokok_jr: jrData.NILAI_SW_4,
+            denda_jr: jrData.NILAI_DD_4,
             subtotal: jrData.NILAI_KD_4 + jrData.NILAI_SW_4 + jrData.NILAI_DD_4,
           },
         ],
         total_tarif: {
-          kecelakaan_diri: jrData.NILAI_KD_0 + jrData.NILAI_KD_1 + jrData.NILAI_KD_2 + jrData.NILAI_KD_3 + jrData.NILAI_KD_4,
-          santunan_wafat: jrData.NILAI_SW_0 + jrData.NILAI_SW_1 + jrData.NILAI_SW_2 + jrData.NILAI_SW_3 + jrData.NILAI_SW_4,
-          dana_derma: jrData.NILAI_DD_0 + jrData.NILAI_DD_1 + jrData.NILAI_DD_2 + jrData.NILAI_DD_3 + jrData.NILAI_DD_4,
+          kartu_jr: jrData.NILAI_KD_0 + jrData.NILAI_KD_1 + jrData.NILAI_KD_2 + jrData.NILAI_KD_3 + jrData.NILAI_KD_4,
+          pokok_jr: jrData.NILAI_SW_0 + jrData.NILAI_SW_1 + jrData.NILAI_SW_2 + jrData.NILAI_SW_3 + jrData.NILAI_SW_4,
+          denda_jr: jrData.NILAI_DD_0 + jrData.NILAI_DD_1 + jrData.NILAI_DD_2 + jrData.NILAI_DD_3 + jrData.NILAI_DD_4,
           total: 
             jrData.NILAI_KD_0 + jrData.NILAI_KD_1 + jrData.NILAI_KD_2 + jrData.NILAI_KD_3 + jrData.NILAI_KD_4 +
             jrData.NILAI_SW_0 + jrData.NILAI_SW_1 + jrData.NILAI_SW_2 + jrData.NILAI_SW_3 + jrData.NILAI_SW_4 +

@@ -56,13 +56,14 @@ export interface JrApiResponse {
 }
 
 /**
- * Tarif JR per tahun
+ * Tarif JR per periode
+ * Index 0 = Periode berjalan, Index 1-4 = Tunggakan 1-4 tahun lalu
  */
 export interface TarifJr {
-  tahun: number;
-  kecelakaan_diri: number;
-  santunan_wafat: number;
-  dana_derma: number;
+  keterangan: string; // 'Periode Berjalan' | 'Tunggakan 1 tahun lalu' | dst
+  kartu_jr: number; // NILAI_KD
+  pokok_jr: number; // NILAI_SW
+  denda_jr: number; // NILAI_DD
   subtotal: number;
 }
 
@@ -76,9 +77,9 @@ export interface JrResponse {
   jenis: string;
   tarif_per_tahun: TarifJr[];
   total_tarif: {
-    kecelakaan_diri: number;
-    santunan_wafat: number;
-    dana_derma: number;
+    kartu_jr: number;
+    pokok_jr: number;
+    denda_jr: number;
     total: number;
   };
   nilai_prorata: number;
