@@ -10,6 +10,7 @@ import {
 } from '../../shared/calculation/pajak.helper';
 import { getDateDifference } from '../../utils/date.util';
 import { formatRupiah } from '../../utils/number.util';
+import { calculatePenaltyMonths } from '../../utils/penalty-month.util';
 
 /**
  * Get pajak by nopol
@@ -64,8 +65,19 @@ export async function getPajakByNopol(
     const tahunDari = tahun;
     const tahunSampai = tahun + 1;
     
-    // Tanggal jatuh tempo periode (1 Januari tahun sampai)
-    const jatuhTempo = new Date(tahunSampai, 0, 1);
+    // Tanggal jatuh tempo periode mengikuti tanggal terakhir bayar, tapi tahunnya sesuai periode
+    // Misal: terakhir bayar 3 Nov 2017, maka periode 2025/2026 jatuh tempo 3 Nov 2025
+    const bulanTerakhirBayar = terakhirBayar.getMonth();
+    const hariTerakhirBayar = terakhirBayar.getDate();
+    
+    // Jatuh tempo di tahun "dari" (bukan tahun "sampai")
+    // Karena periode 2025/2026 berarti bayar di 2025, berlaku sampai 2026
+    let jatuhTempo = new Date(tahunDari, bulanTerakhirBayar, hariTerakhirBayar);
+    
+    // Handle edge case: jika tanggal tidak valid (misal 31 Feb), gunakan hari terakhir bulan tersebut
+    if (jatuhTempo.getMonth() !== bulanTerakhirBayar) {
+      jatuhTempo = new Date(tahunDari, bulanTerakhirBayar + 1, 0);
+    }
     
     // Tagihan mulai muncul 3 bulan sebelum jatuh tempo
     const mulaiTagihan = new Date(jatuhTempo);
@@ -78,7 +90,7 @@ export async function getPajakByNopol(
     
     // Tentukan periode untuk cek opsen (gunakan jatuh tempo periode)
     // Karena opsen berlaku untuk pembayaran yang jatuh tempo setelah 2025-01-06
-    const periodeStr = `${tahunSampai}-01-01`;
+    const periodeStr = jatuhTempo.toISOString().split('T')[0];
     const isOpsen = validateIsOpsen(periodeStr);
     
     // Hitung pajak pokok dan opsen
@@ -88,21 +100,10 @@ export async function getPajakByNopol(
       isOpsen
     );
     
-    // Hitung bulan telat
-    let bulanTelat = 0;
-    
-    // Jika sudah lewat jatuh tempo, hitung bulan telat
-    if (sekarang > jatuhTempo) {
-      // Hitung selisih waktu dalam hari
-      const selisihMs = sekarang.getTime() - jatuhTempo.getTime();
-      const selisihHari = selisihMs / (1000 * 60 * 60 * 24);
-      
-      // Bulatkan ke atas (ceiling) walaupun lewat 1 hari
-      const selisihBulan = Math.ceil(selisihHari / 30);
-      
-      // Maksimal pengenaan bulan telat adalah 24 bulan (2 tahun)
-      bulanTelat = Math.min(selisihBulan, 24);
-    }
+    // Hitung bulan telat menggunakan metode PHP-style dengan grace period 15 hari
+    // Logika: jika hari > 15, baru tambah 1 bulan
+    // Sama dengan logika di infopkb.php: if($sel_tgl['d'] > 15) $m++;
+    const bulanTelat = calculatePenaltyMonths(jatuhTempo, sekarang, 24);
     
     // Hitung denda
     const { dendaPKB, dendaOpsen } = calculateDenda(
