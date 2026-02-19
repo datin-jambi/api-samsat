@@ -99,6 +99,8 @@ export async function getAllKendaraanQuery(
  * - Hapus semua spasi di database (REPLACE)
  * - Convert ke uppercase (UPPER)
  * - Compare dengan input yang sudah dinormalisasi
+ * 
+ * Mengambil record dengan tg_bayar terbaru terlebih dahulu
  */
 export async function getDetailKendaraan(
   nopol: string,
@@ -126,6 +128,7 @@ export async function getDetailKendaraan(
     FROM ${from}
     WHERE UPPER(REPLACE(no_polisi, ' ', '')) = UPPER(REPLACE($1, ' ', ''))
     ${where ? 'AND ' + where : ''}
+    ORDER BY tg_bayar DESC, no_urut_trn DESC
     LIMIT 1
   `;
   
