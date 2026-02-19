@@ -31,18 +31,22 @@ export async function getPajakByNopol(
   const nilaiJual = Math.round(njkbData?.nilai_jual || 0);
   const bobot = Number(njkbData?.bobot || 0);
 
-  // 3. Validasi tanggal terakhir bayar
+  // 3. Validasi tanggal jatuh tempo PKB terakhir
   if (!kendaraan.tg_akhir_pkb) {
-    throw new Error('Data tanggal terakhir bayar (tg_akhir_pkb) tidak ditemukan');
+    throw new Error('Data tanggal jatuh tempo PKB (tg_akhir_pkb) tidak ditemukan');
   }
 
   // Parse tanggal - kendaraan.tg_akhir_pkb adalah string dari service
-  const terakhirBayar = new Date(kendaraan.tg_akhir_pkb);
+  const jatuhTempoPkb = new Date(kendaraan.tg_akhir_pkb);
   
   // Validasi apakah date valid
-  if (isNaN(terakhirBayar.getTime())) {
-    throw new Error(`Format tanggal terakhir bayar tidak valid: ${kendaraan.tg_akhir_pkb}`);
+  if (isNaN(jatuhTempoPkb.getTime())) {
+    throw new Error(`Format tanggal jatuh tempo PKB tidak valid: ${kendaraan.tg_akhir_pkb}`);
   }
+
+  // Terakhir bayar adalah 1 tahun sebelum jatuh tempo PKB
+  const terakhirBayar = new Date(jatuhTempoPkb);
+  terakhirBayar.setFullYear(terakhirBayar.getFullYear() - 1);
   
   const sekarang = new Date();
   
@@ -56,9 +60,8 @@ export async function getPajakByNopol(
   let totalOpsen = 0;
   let totalDendaOpsen = 0;
   
-  // Mulai dari tahun terakhir bayar (bukan tahun setelahnya)
-  // const tahunMulai = terakhirBayar.getFullYear();
-  const tahunMulai = terakhirBayar.getFullYear() + 1;
+  // Mulai dari tahun jatuh tempo PKB, agar periode pertama masuk tagihan
+  const tahunMulai = jatuhTempoPkb.getFullYear();
   const tahunSekarang = sekarang.getFullYear();
   
   for (let tahun = tahunMulai; tahun <= tahunSekarang; tahun++) {
@@ -67,8 +70,8 @@ export async function getPajakByNopol(
     
     // Tanggal jatuh tempo periode mengikuti tanggal terakhir bayar, tapi tahunnya sesuai periode
     // Misal: terakhir bayar 3 Nov 2017, maka periode 2025/2026 jatuh tempo 3 Nov 2025
-    const bulanTerakhirBayar = terakhirBayar.getMonth();
-    const hariTerakhirBayar = terakhirBayar.getDate();
+    const bulanTerakhirBayar = jatuhTempoPkb.getMonth();
+    const hariTerakhirBayar = jatuhTempoPkb.getDate();
     
     // Jatuh tempo di tahun "dari" (bukan tahun "sampai")
     // Karena periode 2025/2026 berarti bayar di 2025, berlaku sampai 2026
@@ -171,7 +174,7 @@ export async function getPajakByNopol(
   const data: DetailPajakResponse = {
     nopol: kendaraan.no_polisi,
     tahun_rakitan: kendaraan.th_rakitan,
-    terakhir_bayar: kendaraan.tg_akhir_pkb,
+    terakhir_bayar: terakhirBayar.toISOString().split('T')[0],
     jarak,
     njkb: {
       nilai_jual: kendaraan.njkb.nilai_jual,
