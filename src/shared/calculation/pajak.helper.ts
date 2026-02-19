@@ -101,6 +101,7 @@ export function calculateDendaPKB(
     bulanTelat: number,
     isOpsen: boolean
 ): number {
+    if (bulanTelat <= 0) return 0;
     const baseRate = isOpsen ? 0.01 : 0.02; // 1% atau 2%
     const dendaRate = baseRate + (bulanTelat * 0.02);
     return dendaRate * pkb;
@@ -119,7 +120,7 @@ export function calculateDendaOpsen(
     bulanTelat: number,
     isOpsen: boolean
 ): number {
-    if (!isOpsen) return 0;
+    if (!isOpsen || bulanTelat <= 0) return 0;
 
     const dendaRate = 0.01 + (bulanTelat * 0.01);
     return dendaRate * opsen;
