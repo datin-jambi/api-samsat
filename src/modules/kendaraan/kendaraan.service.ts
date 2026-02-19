@@ -13,6 +13,7 @@ import {
 import {formatDate} from '../../utils/date.util';
 import {formatRupiah} from '../../utils/number.util';
 import {normalizeNopol} from '../../utils/string.util';
+import { tgAkhirStnk } from '../../utils/stnk-cek';
 
 /**
  * Get all kendaraan
@@ -113,6 +114,18 @@ export async function getKendaraanByNopol(
 
   const cekNjkb = await getNjkbKendaraanQuery(kendaraan.kd_merek_kb, kendaraan.th_rakitan);
   const ceknamaBbm = await getNamaBbm(kendaraan.kd_bbm);
+  
+  if (kendaraan.tg_akhir_stnk && kendaraan.tg_akhir_pkb) {
+    const stnkDate = new Date(kendaraan.tg_akhir_stnk);
+    const pkbDate = new Date(kendaraan.tg_akhir_pkb);
+
+    if (!isNaN(stnkDate.getTime()) && !isNaN(pkbDate.getTime()) && stnkDate > pkbDate) {
+      kendaraan.tg_akhir_stnk = tgAkhirStnk(
+        kendaraan.tg_akhir_stnk.toString(),
+        kendaraan.tg_akhir_pkb.toString()
+      );
+    }
+  }
 
   const data: DetailKendaraanResponse = {
     nm_merek_kb: kendaraan.nm_merek_kb,
