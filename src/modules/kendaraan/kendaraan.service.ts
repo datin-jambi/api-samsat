@@ -119,10 +119,16 @@ export async function getKendaraanByNopol(
     const stnkDate = new Date(kendaraan.tg_akhir_stnk);
     const pkbDate = new Date(kendaraan.tg_akhir_pkb);
 
-    if (!isNaN(stnkDate.getTime()) && !isNaN(pkbDate.getTime()) && stnkDate > pkbDate) {
+    // ✅ Compare tahun saja
+    if (
+      !isNaN(stnkDate.getTime()) &&
+      !isNaN(pkbDate.getTime()) &&
+      stnkDate.getFullYear() > pkbDate.getFullYear()
+    ) {
+      // Update kendaraan dengan hasil normalisasi
       kendaraan.tg_akhir_stnk = tgAkhirStnk(
-        kendaraan.tg_akhir_stnk.toString(),
-        kendaraan.tg_akhir_pkb.toString()
+        kendaraan.tg_akhir_stnk,
+        kendaraan.tg_akhir_pkb
       );
     }
   }
@@ -185,6 +191,24 @@ export async function getPnbpKendaraan(
   // 2. Validasi tanggal STNK
   if (!kendaraan.tg_akhir_stnk) {
     throw new Error('Data tanggal akhir STNK tidak ditemukan');
+  }
+
+  if (kendaraan.tg_akhir_stnk && kendaraan.tg_akhir_pkb) {
+    const stnkDate = new Date(kendaraan.tg_akhir_stnk);
+    const pkbDate = new Date(kendaraan.tg_akhir_pkb);
+
+    // ✅ Compare tahun saja
+    if (
+      !isNaN(stnkDate.getTime()) &&
+      !isNaN(pkbDate.getTime()) &&
+      stnkDate.getFullYear() > pkbDate.getFullYear()
+    ) {
+      // Update kendaraan dengan hasil normalisasi
+      kendaraan.tg_akhir_stnk = tgAkhirStnk(
+        kendaraan.tg_akhir_stnk,
+        kendaraan.tg_akhir_pkb
+      );
+    }
   }
 
   const tglAkhirStnk = new Date(kendaraan.tg_akhir_stnk);
