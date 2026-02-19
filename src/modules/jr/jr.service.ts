@@ -80,12 +80,17 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
   const golKend = String(kendaraan.kd_merek_kb).substring(0, 3); // 3 angka pertama
   const cc = kendaraan.jumlah_cc.toString();
   const kodePlat = String(kendaraan.kd_plat);
-  const tglAkhirPkb = kendaraan.tg_akhir_pkb; // format YYYY-MM-DD
+  let tglAkhirPkb = kendaraan.tg_akhir_pkb; // format YYYY-MM-DD
   
   // Validasi tanggal wajib ada
   if (!tglAkhirPkb) {
     throw new Error('Data tanggal akhir PKB tidak ditemukan untuk kendaraan ini');
   }
+  
+  // Kurangi 1 tahun dari tanggal akhir PKB
+  const pkbDate = parseTanggal(tglAkhirPkb);
+  pkbDate.setFullYear(pkbDate.getFullYear() - 1);
+  tglAkhirPkb = formatTanggalJr(pkbDate).split('/').reverse().join('-'); // Convert ke YYYY-MM-DD
   
   const masaLakuYad = hitungMasaLakuYangAkanDatang(tglAkhirPkb);
   
@@ -115,6 +120,8 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
       },
     ],
   };
+
+  console.log('Request body untuk API JR:', requestBody);
 
   // 4. Hit API JR eksternal dengan retry mechanism
   const maxRetries = 5; // Tingkatkan ke 5x karena API sering timeout
