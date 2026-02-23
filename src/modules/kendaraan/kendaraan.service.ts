@@ -244,7 +244,8 @@ export async function getPnbpKendaraan(
   let pnbpStnk = 0;
   
   if (perlitunganPnbpTnkb && (sudahHabis || perluCetakBaru)) {
-    pnbpStnk = 200000;
+    // Referensi PHP: R2 = 100000, R4 (lainnya) = 200000
+    pnbpStnk = kendaraan.kd_jenis_kb === 'R' ? 100000 : 200000;
   }
   
   // 6. Total PNBP
