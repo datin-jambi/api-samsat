@@ -1,8 +1,9 @@
 /**
  * Normalisasi tanggal akhir STNK agar sesuai dengan urutan tahun.
- * Jika tahun STNK > tahun PKB, kurangi 5 tahun sampai:
- * - Tahun STNK < tahun PKB, ATAU
- * - Tahun STNK < tahun (hari ini)
+ * 
+ * Referensi PHP (line 299-314 & hitstnk line 1471-1478):
+ * 1. Jika tahun STNK > tahun PKB: kurangi 5 tahun sampai < PKB atau < today
+ * 2. Jika STNK sudah mati (< today): tambah 5 tahun sampai STNK+5 > today
  * 
  * @param tg_akhir_stnk - Tanggal akhir STNK (format: string atau Date)
  * @param tg_akhir_pkb - Tanggal akhir PKB (format: string atau Date)
@@ -12,7 +13,7 @@ export function tgAkhirStnk(
   tg_akhir_stnk: string | Date,
   tg_akhir_pkb: string | Date
 ): Date {
-  const stnkDate = new Date(tg_akhir_stnk);
+  let stnkDate = new Date(tg_akhir_stnk);
   const pkbDate = new Date(tg_akhir_pkb);
 
   // Validasi
@@ -20,28 +21,36 @@ export function tgAkhirStnk(
     return stnkDate;
   }
 
-  // y1 = Tahun hari ini (diambil dari date('d/m/Y') di PHP)
   const today = new Date();
   const y1 = today.getFullYear();
-  
-  // y2 = Tahun akhir PKB
   const y2 = pkbDate.getFullYear();
 
-  // ✅ Hanya proses jika tahun STNK > tahun PKB
+  // Step 1: Jika tahun STNK > tahun PKB, kurangi 5 tahun
   if (stnkDate.getFullYear() > y2) {
     const stnkAkhir = new Date(stnkDate);
 
-    // Loop: kurangi 5 tahun sampai kondisi terpenuhi
     while (true) {
       stnkAkhir.setFullYear(stnkAkhir.getFullYear() - 5);
       const y = stnkAkhir.getFullYear();
 
-      // ✅ Break jika tahun < PKB atau tahun < tahun hari ini (like y1)
       if (y < y2) break;
       else if (y < y1) break;
     }
 
-    return stnkAkhir;
+    stnkDate = stnkAkhir;
+  }
+
+  // Step 2: Jika STNK sudah mati (< today), tambah 5 tahun sampai valid
+  // Referensi PHP hitstnk() Case 2 (line 1473-1478)
+  if (stnkDate < today) {
+    while (true) {
+      const stnkYad = new Date(stnkDate);
+      stnkYad.setFullYear(stnkYad.getFullYear() + 5);
+      
+      if (stnkYad > today) break;
+      
+      stnkDate = stnkYad;
+    }
   }
 
   return stnkDate;
