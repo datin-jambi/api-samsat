@@ -115,22 +115,12 @@ export async function getKendaraanByNopol(
   const cekNjkb = await getNjkbKendaraanQuery(kendaraan.kd_merek_kb, kendaraan.th_rakitan);
   const ceknamaBbm = await getNamaBbm(kendaraan.kd_bbm);
   
+  // Normalisasi tg_akhir_stnk (handle STNK mati atau tahun tidak sesuai)
   if (kendaraan.tg_akhir_stnk && kendaraan.tg_akhir_pkb) {
-    const stnkDate = new Date(kendaraan.tg_akhir_stnk);
-    const pkbDate = new Date(kendaraan.tg_akhir_pkb);
-
-    // ✅ Compare tahun saja
-    if (
-      !isNaN(stnkDate.getTime()) &&
-      !isNaN(pkbDate.getTime()) &&
-      stnkDate.getFullYear() > pkbDate.getFullYear()
-    ) {
-      // Update kendaraan dengan hasil normalisasi
-      kendaraan.tg_akhir_stnk = tgAkhirStnk(
-        kendaraan.tg_akhir_stnk,
-        kendaraan.tg_akhir_pkb
-      );
-    }
+    kendaraan.tg_akhir_stnk = tgAkhirStnk(
+      kendaraan.tg_akhir_stnk,
+      kendaraan.tg_akhir_pkb
+    );
   }
 
   const data: DetailKendaraanResponse = {
@@ -193,22 +183,12 @@ export async function getPnbpKendaraan(
     throw new Error('Data tanggal akhir STNK tidak ditemukan');
   }
 
+  // Normalisasi tg_akhir_stnk (handle STNK mati atau tahun tidak sesuai)
   if (kendaraan.tg_akhir_stnk && kendaraan.tg_akhir_pkb) {
-    const stnkDate = new Date(kendaraan.tg_akhir_stnk);
-    const pkbDate = new Date(kendaraan.tg_akhir_pkb);
-
-    // ✅ Compare tahun saja
-    if (
-      !isNaN(stnkDate.getTime()) &&
-      !isNaN(pkbDate.getTime()) &&
-      stnkDate.getFullYear() > pkbDate.getFullYear()
-    ) {
-      // Update kendaraan dengan hasil normalisasi
-      kendaraan.tg_akhir_stnk = tgAkhirStnk(
-        kendaraan.tg_akhir_stnk,
-        kendaraan.tg_akhir_pkb
-      );
-    }
+    kendaraan.tg_akhir_stnk = tgAkhirStnk(
+      kendaraan.tg_akhir_stnk,
+      kendaraan.tg_akhir_pkb
+    );
   }
 
   const tglAkhirStnk = new Date(kendaraan.tg_akhir_stnk);
