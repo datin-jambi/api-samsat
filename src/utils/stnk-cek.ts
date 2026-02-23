@@ -27,17 +27,18 @@ export function tgAkhirStnk(
 
   // Step 1: Jika tahun STNK > tahun PKB, kurangi 5 tahun
   if (stnkDate.getFullYear() > y2) {
-    const stnkAkhir = new Date(stnkDate);
-
     while (true) {
-      stnkAkhir.setFullYear(stnkAkhir.getFullYear() - 5);
-      const y = stnkAkhir.getFullYear();
-
+      const stnkTemp = new Date(stnkDate);
+      stnkTemp.setFullYear(stnkTemp.getFullYear() - 5);
+      const y = stnkTemp.getFullYear();
+      
+      // Break jika sudah < PKB atau < today (PHP line 309-311)
       if (y < y2) break;
       else if (y < y1) break;
+      
+      // Update hanya jika TIDAK break (PHP line 313)
+      stnkDate = stnkTemp;
     }
-
-    stnkDate = stnkAkhir;
   }
 
   // Step 2: Jika STNK sudah mati (< today), tambah 5 tahun sampai valid
