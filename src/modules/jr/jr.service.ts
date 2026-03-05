@@ -77,9 +77,9 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
   }
 
   // 2. Extract data yang dibutuhkan
-  const golKend = String(kendaraan.kd_merek_kb).substring(0, 3); // 3 angka pertama
+  const golKend = String(kendaraan.merek.kode).substring(0, 3); // 3 angka pertama
   const cc = kendaraan.jumlah_cc.toString();
-  const kodePlat = String(kendaraan.kd_plat);
+  const kodePlat = String(kendaraan.plat.kode);
   let tglAkhirPkb = kendaraan.tg_akhir_pkb; // format YYYY-MM-DD
   
   // Validasi tanggal wajib ada
@@ -95,7 +95,7 @@ export async function getJrByNopol(nopol: string): Promise<JrResponse | null> {
   const masaLakuYad = hitungMasaLakuYangAkanDatang(tglAkhirPkb);
   
   // Cek apakah kendaraan listrik (kode 5)
-  const kendListrik = String(kendaraan.kd_merek_kb).startsWith('5') ? 'Y' : 'N';
+  const kendListrik = String(kendaraan.merek.kode).startsWith('5') ? 'Y' : 'N';
 
   // 3. Build request body untuk API JR
   const requestBody: JrApiRequest = {
