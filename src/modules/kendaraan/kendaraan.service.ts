@@ -8,7 +8,10 @@ import {
   getJenisMilik,
   getFungsiKendaraan
 } from './kendaraan.query';
-import { getKendaraanData } from '../../shared/query/kendaraan.helper';
+import { 
+  getKendaraanData,
+  updateKdKelKbByPlat
+} from '../../shared/query/kendaraan.helper';
 import { 
   KendaraanResponse,
   DetailKendaraanResponse,
@@ -98,7 +101,8 @@ export async function getKendaraanByNopol(
   const namaJenisKendaraan = await getJenisKendaraan(kendaraan.kd_jenis_kb);
   const namaJenisMilik = await getJenisMilik(kendaraan.kd_jen_milik);
   const namaFungsiKendaraan = await getFungsiKendaraan(kendaraan.kd_fungsi);
-  
+  const kelKbUpdated = updateKdKelKbByPlat(kendaraan.kd_plat);
+
   // Normalisasi tg_akhir_stnk (handle STNK mati atau tahun tidak sesuai)
   if (kendaraan.tg_akhir_stnk && kendaraan.tg_akhir_pkb) {
     kendaraan.tg_akhir_stnk = tgAkhirStnk(
@@ -111,7 +115,7 @@ export async function getKendaraanByNopol(
     no_polisi: kendaraan.no_polisi,
     nm_model_kb: kendaraan.nm_model_kb,
     nm_jenis_kb: kendaraan.nm_jenis_kb,
-    kd_kel_kb: kendaraan.kd_kel_kb,
+    kd_kel_kb: kelKbUpdated,
     merek: {
       kode: Number(kendaraan.kd_merek_kb),
       nama: kendaraan.nm_merek_kb,

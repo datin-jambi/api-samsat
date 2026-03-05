@@ -40,3 +40,14 @@ export async function getKendaraanData(normalizedNopol: string): Promise<DetailK
 
   return kendaraan;
 }
+
+export function updateKdKelKbByPlat(kd_plat: number): string {
+  switch (kd_plat) {
+    case 2:
+      return 'U';
+    case 3:
+      return 'D';
+    default:
+      return 'P';
+  }
+}
