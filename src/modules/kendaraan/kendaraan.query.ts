@@ -110,6 +110,8 @@ export async function getDetailKendaraan(
 ): Promise<DetailKendaraan | null> {
   const sql = `
     SELECT 
+      no_polisi,
+      kd_merek_kb,
       nm_merek_kb,
       nm_model_kb,
       nm_jenis_kb,
@@ -118,12 +120,15 @@ export async function getDetailKendaraan(
       warna_kb,
       tg_akhir_pkb,
       tg_akhir_stnk,
-      kd_plat,
-      no_polisi,
-      kd_merek_kb,
       kd_lokasi,
       kd_bbm,
-      kd_jenis_kb
+      kd_kel_kb,
+
+      kd_plat,
+      kd_jenis_kb,
+
+      kd_jen_milik,
+      kd_fungsi
       ${select ? ',' + select : ''}
     FROM ${from}
     WHERE UPPER(REPLACE(no_polisi, ' ', '')) = UPPER(REPLACE($1, ' ', ''))
@@ -135,3 +140,54 @@ export async function getDetailKendaraan(
   return queryOne<DetailKendaraan>(sql, [nopol]);
 }
 
+export async function getWarnaPlat(
+  kd_plat: number
+): Promise<string> {
+  const sql = `
+    SELECT 
+      nm_plat
+    FROM t_plat
+    WHERE kd_plat = $1
+    LIMIT 1`;
+  const result = await queryOne<any>(sql, [kd_plat]);
+  return result ? result.nm_plat : 'Plat tidak ditemukan';
+}
+
+export async function getJenisKendaraan(
+  kd_jenis_kb: string
+): Promise<string> {
+  const sql = `
+    SELECT 
+      nm_jenis_kb
+    FROM t_jeniskb
+    WHERE kd_jenis_kb = $1
+    LIMIT 1`;
+  const result = await queryOne<any>(sql, [kd_jenis_kb]);
+  return result ? result.nm_jenis_kb : 'Jenis kendaraan tidak ditemukan';
+}
+
+export async function getJenisMilik(
+  kd_jen_milik: string
+): Promise<string> {
+  const sql = `
+    SELECT 
+      nm_jen_milik
+    FROM t_jen_milik
+    WHERE kd_jen_milik = $1
+    LIMIT 1`;
+  const result = await queryOne<any>(sql, [kd_jen_milik]);
+  return result ? result.nm_milik : 'Jenis milik tidak ditemukan';
+}
+
+export async function getFungsiKendaraan(
+  kd_fungsi: string
+): Promise<string> {
+  const sql = `
+    SELECT 
+      nm_fungsi
+    FROM t_fungsikb
+    WHERE kd_fungsi = $1
+    LIMIT 1`;
+  const result = await queryOne<any>(sql, [kd_fungsi]);
+  return result ? result.nm_fungsi : 'Fungsi kendaraan tidak ditemukan';
+}

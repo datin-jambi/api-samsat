@@ -1,10 +1,14 @@
 import {
   getAllKendaraanQuery,
-  getDetailKendaraan,
   getNjkbKendaraanQuery,
   getLokasiTransaksiTerakhirKendaraan,
-  getNamaBbm
+  getNamaBbm,
+  getWarnaPlat,
+  getJenisKendaraan,
+  getJenisMilik,
+  getFungsiKendaraan
 } from './kendaraan.query';
+import { getKendaraanData } from '../../shared/query/kendaraan.helper';
 import { 
   KendaraanResponse,
   DetailKendaraanResponse,
@@ -80,31 +84,7 @@ export async function getKendaraanByNopol(
   // Normalize nopol (hapus spasi, uppercase)
   const normalizedNopol = normalizeNopol(nopol);
   
-  let kendaraan = await getDetailKendaraan(
-    normalizedNopol,
-    '',
-    't_trnkb',
-    ''
-  );
-  // Kalau tidak ada, coba dari t_mstkb
-  if (!kendaraan) {
-    kendaraan = await getDetailKendaraan(
-      normalizedNopol,
-      '',
-      't_mstkb',
-      ''
-    );
-  }
-
-  // Kalau masih tidak ada, coba dari tt_trnkb
-  if (!kendaraan) {
-    kendaraan = await getDetailKendaraan(
-      normalizedNopol,
-      '',
-      'tt_trnkb',
-      ''
-    );
-  }
+  const kendaraan = await getKendaraanData(normalizedNopol);
   
   if (!kendaraan) {
     return null;
@@ -114,6 +94,10 @@ export async function getKendaraanByNopol(
 
   const cekNjkb = await getNjkbKendaraanQuery(kendaraan.kd_merek_kb, kendaraan.th_rakitan);
   const ceknamaBbm = await getNamaBbm(kendaraan.kd_bbm);
+  const namaWarnaPlat = await getWarnaPlat(kendaraan.kd_plat);
+  const namaJenisKendaraan = await getJenisKendaraan(kendaraan.kd_jenis_kb);
+  const namaJenisMilik = await getJenisMilik(kendaraan.kd_jen_milik);
+  const namaFungsiKendaraan = await getFungsiKendaraan(kendaraan.kd_fungsi);
   
   // Normalisasi tg_akhir_stnk (handle STNK mati atau tahun tidak sesuai)
   if (kendaraan.tg_akhir_stnk && kendaraan.tg_akhir_pkb) {
@@ -124,18 +108,35 @@ export async function getKendaraanByNopol(
   }
 
   const data: DetailKendaraanResponse = {
-    nm_merek_kb: kendaraan.nm_merek_kb,
+    no_polisi: kendaraan.no_polisi,
     nm_model_kb: kendaraan.nm_model_kb,
     nm_jenis_kb: kendaraan.nm_jenis_kb,
+    kd_kel_kb: kendaraan.kd_kel_kb,
+    merek: {
+      kode: Number(kendaraan.kd_merek_kb),
+      nama: kendaraan.nm_merek_kb,
+    },
     th_rakitan: kendaraan.th_rakitan,
     jumlah_cc: kendaraan.jumlah_cc,
     warna_kb: kendaraan.warna_kb,
     tg_akhir_pkb: formatDate(kendaraan.tg_akhir_pkb),
     tg_akhir_stnk: formatDate(kendaraan.tg_akhir_stnk),
-    kd_jenis_kb: kendaraan.kd_jenis_kb,
-    kd_plat: Number(kendaraan.kd_plat),
-    no_polisi: kendaraan.no_polisi,
-    kd_merek_kb: Number(kendaraan.kd_merek_kb),
+    plat:{
+      kode: Number(kendaraan.kd_plat),
+      nama: namaWarnaPlat
+    },
+    jenis_kendaraan:{
+      kode: kendaraan.kd_jenis_kb,
+      nama: namaJenisKendaraan
+    },
+    jenis_milik: {
+      kode: kendaraan.kd_jen_milik,
+      nama: namaJenisMilik
+    },
+    fungsi_kendaraan: {
+      kode: kendaraan.kd_fungsi,
+      nama: namaFungsiKendaraan
+    },
     bbm: {
       kode: Number(kendaraan.kd_bbm),
       nama: ceknamaBbm || 'BBM tidak ditemukan'
@@ -164,15 +165,7 @@ export async function getPnbpKendaraan(
   const normalizedNopol = normalizeNopol(nopol);
   
   // 1. Ambil data kendaraan
-  let kendaraan = await getDetailKendaraan(normalizedNopol, '', 't_trnkb', '');
-  
-  if (!kendaraan) {
-    kendaraan = await getDetailKendaraan(normalizedNopol, '', 't_mstkb', '');
-  }
-  
-  if (!kendaraan) {
-    kendaraan = await getDetailKendaraan(normalizedNopol, '', 'tt_trnkb', '');
-  }
+  const kendaraan = await getKendaraanData(normalizedNopol);
   
   if (!kendaraan) {
     return null;
