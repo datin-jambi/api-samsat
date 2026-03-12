@@ -27,6 +27,24 @@ export function formatRupiah(amount: number): string {
 }
 
 /**
+ * Parse string format Rupiah menjadi number
+ * @example parseRupiah("Rp 1.500.000") => 1500000
+ * @example parseRupiah("Rp 72.193,44") => 72193.44
+ * @example parseRupiah("72.193") => 72193
+ */
+export function parseRupiah(value: string): number {
+  const normalized = value
+    .trim()
+    .replace(/^rp\s*/i, '')
+    .replace(/\s+/g, '')
+    .replace(/\./g, '')
+    .replace(/,/g, '.')
+    .replace(/[^0-9.-]/g, '');
+
+  return Number(normalized);
+}
+
+/**
  * Format angka dengan pemisah ribuan
  * @example formatNumber(1500000) => "1.500.000"
  */

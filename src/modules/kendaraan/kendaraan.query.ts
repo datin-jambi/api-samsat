@@ -176,7 +176,7 @@ export async function getJenisMilik(
     WHERE kd_jen_milik = $1
     LIMIT 1`;
   const result = await queryOne<any>(sql, [kd_jen_milik]);
-  return result ? result.nm_milik : 'Jenis milik tidak ditemukan';
+  return result ? result.nm_jen_milik : 'Jenis milik tidak ditemukan';
 }
 
 export async function getFungsiKendaraan(

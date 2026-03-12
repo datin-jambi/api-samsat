@@ -15,8 +15,47 @@ export function validateIsOpsen(periode: string): boolean {
  * @param isOpsen - Status opsen
  * @returns Tarif (1% jika opsen true, 1.5% jika false)
  */
-function getTarif(isOpsen: boolean): number {
-    return isOpsen ? 0.01 : 0.015; // 1% atau 1.5%
+function getTarif(
+    isOpsen: boolean, 
+    kd_plat: string, 
+    kd_jenis_kb: string, 
+    kd_jenis_milik: string, 
+    kd_fungsi: string
+): number {
+    let tarif = 0.015; // Default tarif 1.5% sebelum opsen berlaku
+    console.info(kd_jenis_milik);
+    switch (kd_plat) {
+        default:
+            tarif = isOpsen ? 0.01 : 0.015; // 1% atau 1.5%
+            if (
+                kd_fungsi == '04' || // SOSIAL/ KEAGAMAAN  
+                kd_fungsi == '06' || // AMBULANCE
+                kd_fungsi == '07' || // MOBIL JENAZAH
+                kd_fungsi == '08' ){ // DAMKAR
+                tarif = 0.005;
+                if (
+                    kd_jenis_kb == 'A' || // SEDAN 
+                    kd_jenis_kb == 'B' ){ // JEEP
+                    tarif = 0.01;
+                }
+            }
+            return tarif;
+        case 'U':
+            // UMUM ORANG
+            if (kd_jenis_kb == 'C' || // MINIBUS
+                kd_jenis_kb == 'D' || // MICROBUS
+                kd_jenis_kb == 'E' ){ // BUS
+                if(isOpsen){
+                    tarif = 0.005;
+                }else{
+                    tarif = isOpsen ? 0.01 : 0.015;
+                }
+            }
+            return tarif;
+        case 'D':
+            tarif = 0.005;
+            return tarif;
+    }
 }
 
 /**
@@ -24,8 +63,46 @@ function getTarif(isOpsen: boolean): number {
  * @param isOpsen - Status opsen
  * @returns Pengenaan (90.4% jika opsen true, 100% jika false)
  */
-function getPengenaan(isOpsen: boolean): number {
-    return isOpsen ? 0.904 : 1.0; // 90.4% atau 100%
+function getPengenaan(
+    isOpsen: boolean, 
+    kd_plat: string, 
+    kd_jenis_kb: string, 
+    kd_jenis_milik: string, 
+    kd_fungsi: string
+): number {
+    let pengenaan = 1.0;
+    console.info(kd_jenis_milik);
+    switch (kd_plat) {
+        default:
+            pengenaan = isOpsen ? 0.904 : 1.0; // 90.4% atau 100%
+            if (
+                kd_fungsi == '04' || // SOSIAL/ KEAGAMAAN  
+                kd_fungsi == '06' || // AMBULANCE
+                kd_fungsi == '07' || // MOBIL JENAZAH
+                kd_fungsi == '08' ){ // DAMKAR
+                pengenaan = 1.0;
+                if (
+                    kd_jenis_kb == 'A' || // SEDAN
+                    kd_jenis_kb == 'B' ){ // JEEP
+                    pengenaan = isOpsen ? 0.904 : 1.0; // 90.4% atau 100%
+                }
+            }
+            return pengenaan;
+        case 'U':
+            // UMUM ORANG
+            if (kd_jenis_kb == 'C' || // MINIBUS
+                kd_jenis_kb == 'D' || // MICROBUS
+                kd_jenis_kb == 'E' ){ // BUS
+                if(isOpsen){
+                    pengenaan = 0.6; // 60%
+                }else{
+                    pengenaan = isOpsen ? 0.904 : 1.0;
+                }
+            }
+            return pengenaan;
+        case 'D':
+            return 0.5; // 50% untuk plat D, tidak ada perbedaan opsen
+    } 
 }
 
 // ========================================
@@ -43,11 +120,15 @@ function getPengenaan(isOpsen: boolean): number {
 export function calculatePKB(
     nilaiJual: number,
     bobot: number | string,
-    isOpsen: boolean
+    isOpsen: boolean,
+    kd_plat: string,
+    kd_jenis_kb: string,
+    kd_jenis_milik: string,
+    kd_fungsi: string
 ): number {
     const bobotNumber = typeof bobot === 'string' ? parseFloat(bobot) : bobot;
-    const tarif = getTarif(isOpsen);
-    const pengenaan = getPengenaan(isOpsen);
+    const tarif = getTarif(isOpsen, kd_plat, kd_jenis_kb, kd_jenis_milik, kd_fungsi);
+    const pengenaan = getPengenaan(isOpsen, kd_plat, kd_jenis_kb, kd_jenis_milik, kd_fungsi);
     
     return tarif * nilaiJual * bobotNumber * pengenaan;
 }
@@ -72,9 +153,13 @@ export function calculateOpsen(pkb: number, isOpsen: boolean): number {
 export function calculatePajak(
     nilaiJual: number,
     bobot: number | string,
-    isOpsen: boolean
+    isOpsen: boolean,
+    kd_plat: string,
+    kd_jenis_kb: string,
+    kd_jenis_milik: string,
+    kd_fungsi: string
 ) {
-    const pkb = calculatePKB(nilaiJual, bobot, isOpsen);
+    const pkb = calculatePKB(nilaiJual, bobot, isOpsen, kd_plat, kd_jenis_kb, kd_jenis_milik, kd_fungsi);
     const opsen = calculateOpsen(pkb, isOpsen);
     
     return {

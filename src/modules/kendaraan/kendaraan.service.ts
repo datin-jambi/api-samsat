@@ -88,27 +88,48 @@ export async function getKendaraanByNopol(
   const normalizedNopol = normalizeNopol(nopol);
   
   const kendaraan = await getKendaraanData(normalizedNopol);
-  
-  if (!kendaraan) {
-    return null;
-  }
+  if (!kendaraan) return null;
 
-  const lokasiTransaksiTerakhir = await getLokasiTransaksiTerakhirKendaraan(kendaraan.kd_lokasi);
+  // const lokasiTransaksiTerakhir = await getLokasiTransaksiTerakhirKendaraan(kendaraan.kd_lokasi);
+  // const cekNjkb = await getNjkbKendaraanQuery(kendaraan.kd_merek_kb, kendaraan.th_rakitan);
+  // const ceknamaBbm = await getNamaBbm(kendaraan.kd_bbm);
+  // const namaWarnaPlat = await getWarnaPlat(kendaraan.kd_plat);
+  // const namaJenisKendaraan = await getJenisKendaraan(kendaraan.kd_jenis_kb);
+  // const namaJenisMilik = await getJenisMilik(kendaraan.kd_jen_milik);
+  // const namaFungsiKendaraan = await getFungsiKendaraan(kendaraan.kd_fungsi);
+  // const kelKbUpdated = updateKdKelKbByPlat(kendaraan.kd_plat);
 
-  const cekNjkb = await getNjkbKendaraanQuery(kendaraan.kd_merek_kb, kendaraan.th_rakitan);
-  const ceknamaBbm = await getNamaBbm(kendaraan.kd_bbm);
-  const namaWarnaPlat = await getWarnaPlat(kendaraan.kd_plat);
-  const namaJenisKendaraan = await getJenisKendaraan(kendaraan.kd_jenis_kb);
-  const namaJenisMilik = await getJenisMilik(kendaraan.kd_jen_milik);
-  const namaFungsiKendaraan = await getFungsiKendaraan(kendaraan.kd_fungsi);
+  // // Normalisasi tg_akhir_stnk (handle STNK mati atau tahun tidak sesuai)
+  // if (kendaraan.tg_akhir_stnk && kendaraan.tg_akhir_pkb) {
+  //   kendaraan.tg_akhir_stnk = tgAkhirStnk(
+  //     kendaraan.tg_akhir_stnk,
+  //     kendaraan.tg_akhir_pkb
+  //   );
+  // }
+  const [
+    lokasiTransaksiTerakhir,
+    njkb,
+    namaBbm,
+    warnaPlat,
+    jenisKb,
+    jenisMilik,
+    fungsiKb
+  ] = await Promise.all([
+    getLokasiTransaksiTerakhirKendaraan(kendaraan.kd_lokasi),
+    getNjkbKendaraanQuery(Number(kendaraan.kd_merek_kb), kendaraan.th_rakitan),
+    getNamaBbm(kendaraan.kd_bbm),
+    getWarnaPlat(Number(kendaraan.kd_plat)),
+    getJenisKendaraan(kendaraan.kd_jenis_kb),
+    getJenisMilik(kendaraan.kd_jen_milik),
+    getFungsiKendaraan(kendaraan.kd_fungsi)
+  ]);
+
+  // 3. Logic Sync (Tetap dijalankan setelah data terkumpul)
   const kelKbUpdated = updateKdKelKbByPlat(kendaraan.kd_plat);
-
-  // Normalisasi tg_akhir_stnk (handle STNK mati atau tahun tidak sesuai)
+  
+  let finalStnk : string | Date | null = kendaraan.tg_akhir_stnk;
   if (kendaraan.tg_akhir_stnk && kendaraan.tg_akhir_pkb) {
-    kendaraan.tg_akhir_stnk = tgAkhirStnk(
-      kendaraan.tg_akhir_stnk,
-      kendaraan.tg_akhir_pkb
-    );
+    finalStnk = tgAkhirStnk(kendaraan.tg_akhir_stnk, kendaraan.tg_akhir_pkb);
   }
 
   const data: DetailKendaraanResponse = {
@@ -124,30 +145,30 @@ export async function getKendaraanByNopol(
     jumlah_cc: kendaraan.jumlah_cc,
     warna_kb: kendaraan.warna_kb,
     tg_akhir_pkb: formatDate(kendaraan.tg_akhir_pkb),
-    tg_akhir_stnk: formatDate(kendaraan.tg_akhir_stnk),
+    tg_akhir_stnk: formatDate(finalStnk),
     plat:{
       kode: Number(kendaraan.kd_plat),
-      nama: namaWarnaPlat
+      nama: warnaPlat
     },
     jenis_kendaraan:{
       kode: kendaraan.kd_jenis_kb,
-      nama: namaJenisKendaraan
+      nama: jenisKb
     },
     jenis_milik: {
       kode: kendaraan.kd_jen_milik,
-      nama: namaJenisMilik
+      nama: jenisMilik
     },
     fungsi_kendaraan: {
       kode: kendaraan.kd_fungsi,
-      nama: namaFungsiKendaraan
+      nama: fungsiKb
     },
     bbm: {
       kode: Number(kendaraan.kd_bbm),
-      nama: ceknamaBbm || 'BBM tidak ditemukan'
+      nama: namaBbm || 'BBM tidak ditemukan'
     },
     njkb: {
-      nilai_jual: formatRupiah(Math.round(cekNjkb?.nilai_jual || 0)),
-      bobot: Number(cekNjkb?.bobot || 0)
+      nilai_jual: formatRupiah(Math.round(njkb?.nilai_jual || 0)),
+      bobot: Number(njkb?.bobot || 0)
     },
     lokasi_transaksi_terakhir: {
       kd_lokasi: kendaraan.kd_lokasi,

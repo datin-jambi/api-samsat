@@ -2,14 +2,13 @@ import {
   DetailPajakResponse
 } from './pajak.type';
 import { getKendaraanByNopol } from '../kendaraan/kendaraan.service';
-import { getNjkbKendaraanQuery } from '../kendaraan/kendaraan.query';
 import { 
   validateIsOpsen,
   calculatePajak,
   calculateDenda
 } from '../../shared/calculation/pajak.helper';
 import { getDateDifference } from '../../utils/date.util';
-import { formatRupiah } from '../../utils/number.util';
+import { formatRupiah, parseRupiah } from '../../utils/number.util';
 import { calculatePenaltyMonths } from '../../utils/penalty-month.util';
 
 /**
@@ -26,12 +25,10 @@ export async function getPajakByNopol(
     return null;
   }
 
-  // 2. Ambil NJKB dalam bentuk numerik untuk perhitungan
-  const njkbData = await getNjkbKendaraanQuery(kendaraan.kd_merek_kb, kendaraan.th_rakitan);
-  const nilaiJual = Math.round(njkbData?.nilai_jual || 0);
-  const bobot = Number(njkbData?.bobot || 0);
+  const nilaiJual = parseRupiah(kendaraan.njkb.nilai_jual) || 0;
+  const bobot = Number(kendaraan.njkb.bobot) || 0;
 
-  // 3. Validasi tanggal jatuh tempo PKB terakhir
+  // 2. Validasi tanggal jatuh tempo PKB terakhir
   if (!kendaraan.tg_akhir_pkb) {
     throw new Error('Data tanggal jatuh tempo PKB (tg_akhir_pkb) tidak ditemukan');
   }
@@ -100,7 +97,11 @@ export async function getPajakByNopol(
     const { pokok, opsen } = calculatePajak(
       nilaiJual,
       bobot,
-      isOpsen
+      isOpsen,
+      String(kendaraan.plat.kode),
+      kendaraan.jenis_kendaraan.kode,
+      kendaraan.jenis_milik.kode,
+      kendaraan.fungsi_kendaraan.kode
     );
     
     // Hitung bulan telat menggunakan metode PHP-style dengan grace period 15 hari
