@@ -11,6 +11,11 @@ import { logger } from '../utils/logger.util';
  * - Mirip seperti PDO di PHP, tapi dengan connection pooling
  */
 export const pool = new Pool(databaseConfig);
+const SLOW_QUERY_THRESHOLD_MS = 500;
+
+function compactSql(sql: string): string {
+  return sql.replace(/\s+/g, ' ').trim().slice(0, 200);
+}
 
 /**
  * Test koneksi database
@@ -46,17 +51,32 @@ export async function closePool(): Promise<void> {
  * @returns Query result
  */
 export async function query<T = any>(sql: string, params?: any[]): Promise<T[]> {
+  const startTime = Date.now();
+
   try {
     const result = await pool.query(sql, params);
+    const durationMs = Date.now() - startTime;
+
+    if (durationMs >= SLOW_QUERY_THRESHOLD_MS) {
+      logger.warn('Slow query detected', {
+        durationMs,
+        rowCount: result.rowCount,
+        sql: compactSql(sql)
+      });
+    }
+
     return result.rows as T[];
   } catch (error: any) {
+    const durationMs = Date.now() - startTime;
+
     // Log error dengan detail
     logger.error('Database query error:', {
       message: error.message,
       code: error.code,
       detail: error.detail,
       table: error.table,
-      sql: sql.substring(0, 200) // Log 200 karakter pertama dari SQL
+      durationMs,
+      sql: compactSql(sql)
     });
     
     // Throw error dengan pesan yang lebih jelas

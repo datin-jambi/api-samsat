@@ -1,16 +1,8 @@
 import {
-  getAllKendaraanQuery,
-  getNjkbKendaraanQuery,
-  getLokasiTransaksiTerakhirKendaraan,
-  getNamaBbm,
-  getWarnaPlat,
-  getJenisKendaraan,
-  getJenisMilik,
-  getFungsiKendaraan
+  getKendaraanEnrichmentData
 } from './kendaraan.query';
 import { 
-  getKendaraanData,
-  updateKdKelKbByPlat
+  getKendaraanData
 } from '../../shared/query/kendaraan.helper';
 import { 
   KendaraanResponse,
@@ -20,7 +12,15 @@ import {
 import {formatDate} from '../../utils/date.util';
 import {formatRupiah} from '../../utils/number.util';
 import {normalizeNopol} from '../../utils/string.util';
-import { tgAkhirStnk } from '../../utils/stnk-cek';
+import {
+  STNK_RENEWAL_WINDOW_DAYS,
+  buildDetailKendaraanResponse,
+  calculatePnbp,
+  getAllKendaraanByPriority,
+  getFinalStnkDate,
+  mapKendaraanResponse,
+  normalizeStnkDate,
+} from './kendaraan.service.util';
 
 /**
  * Get all kendaraan
@@ -29,49 +29,8 @@ import { tgAkhirStnk } from '../../utils/stnk-cek';
 export async function getAllKendaraan(
   limit?: number
 ): Promise<KendaraanResponse[]> {
-  // Coba dari t_trnkb dulu
-  let kendaraanList = await getAllKendaraanQuery(
-    limit, 
-    '',
-    't_trnkb', 
-    ''
-  );
-  
-  // Kalau tidak ada, coba dari t_mstkb
-  if (kendaraanList.length === 0) {
-    kendaraanList = await getAllKendaraanQuery(
-      limit, 
-      '',
-      't_mstkb', 
-      ''
-    );
-  }
-  
-  // Kalau masih tidak ada, coba dari tt_trnkb
-  if (kendaraanList.length === 0) {
-    kendaraanList = await getAllKendaraanQuery(
-      limit, 
-      '',
-      'tt_trnkb', 
-      ''
-    );
-  }
-
-  const data = kendaraanList.map(data => ({
-    nm_merek_kb: data.nm_merek_kb,
-    nm_model_kb: data.nm_model_kb,
-    nm_jenis_kb: data.nm_jenis_kb,
-    th_rakitan: data.th_rakitan,
-    jumlah_cc: data.jumlah_cc,
-    warna_kb: data.warna_kb,
-    tg_akhir_pkb: formatDate(data.tg_akhir_pkb),
-    kd_plat: Number(data.kd_plat),
-    no_polisi: data.no_polisi,
-    kd_merek_kb: Number(data.kd_merek_kb)
-  }));
-
-  return data;
-
+  const kendaraanList = await getAllKendaraanByPriority(limit);
+  return kendaraanList.map(mapKendaraanResponse);
 }
 
 /**
@@ -84,99 +43,22 @@ export async function getAllKendaraan(
 export async function getKendaraanByNopol(
   nopol: string
 ): Promise<DetailKendaraanResponse | null> {
-  // Normalize nopol (hapus spasi, uppercase)
-  const normalizedNopol = normalizeNopol(nopol);
-  
-  const kendaraan = await getKendaraanData(normalizedNopol);
+  const kendaraan = await getKendaraanData(normalizeNopol(nopol));
   if (!kendaraan) return null;
 
-  // const lokasiTransaksiTerakhir = await getLokasiTransaksiTerakhirKendaraan(kendaraan.kd_lokasi);
-  // const cekNjkb = await getNjkbKendaraanQuery(kendaraan.kd_merek_kb, kendaraan.th_rakitan);
-  // const ceknamaBbm = await getNamaBbm(kendaraan.kd_bbm);
-  // const namaWarnaPlat = await getWarnaPlat(kendaraan.kd_plat);
-  // const namaJenisKendaraan = await getJenisKendaraan(kendaraan.kd_jenis_kb);
-  // const namaJenisMilik = await getJenisMilik(kendaraan.kd_jen_milik);
-  // const namaFungsiKendaraan = await getFungsiKendaraan(kendaraan.kd_fungsi);
-  // const kelKbUpdated = updateKdKelKbByPlat(kendaraan.kd_plat);
+  const enrichment = await getKendaraanEnrichmentData(
+    kendaraan.kd_lokasi,
+    kendaraan.kd_bbm,
+    Number(kendaraan.kd_plat),
+    kendaraan.kd_jenis_kb,
+    kendaraan.kd_jen_milik,
+    kendaraan.kd_fungsi,
+    Number(kendaraan.kd_merek_kb),
+    kendaraan.th_rakitan
+  );
 
-  // // Normalisasi tg_akhir_stnk (handle STNK mati atau tahun tidak sesuai)
-  // if (kendaraan.tg_akhir_stnk && kendaraan.tg_akhir_pkb) {
-  //   kendaraan.tg_akhir_stnk = tgAkhirStnk(
-  //     kendaraan.tg_akhir_stnk,
-  //     kendaraan.tg_akhir_pkb
-  //   );
-  // }
-  const [
-    lokasiTransaksiTerakhir,
-    njkb,
-    namaBbm,
-    warnaPlat,
-    jenisKb,
-    jenisMilik,
-    fungsiKb
-  ] = await Promise.all([
-    getLokasiTransaksiTerakhirKendaraan(kendaraan.kd_lokasi),
-    getNjkbKendaraanQuery(Number(kendaraan.kd_merek_kb), kendaraan.th_rakitan),
-    getNamaBbm(kendaraan.kd_bbm),
-    getWarnaPlat(Number(kendaraan.kd_plat)),
-    getJenisKendaraan(kendaraan.kd_jenis_kb),
-    getJenisMilik(kendaraan.kd_jen_milik),
-    getFungsiKendaraan(kendaraan.kd_fungsi)
-  ]);
-
-  // 3. Logic Sync (Tetap dijalankan setelah data terkumpul)
-  const kelKbUpdated = updateKdKelKbByPlat(kendaraan.kd_plat);
-  
-  let finalStnk : string | Date | null = kendaraan.tg_akhir_stnk;
-  if (kendaraan.tg_akhir_stnk && kendaraan.tg_akhir_pkb) {
-    finalStnk = tgAkhirStnk(kendaraan.tg_akhir_stnk, kendaraan.tg_akhir_pkb);
-  }
-
-  const data: DetailKendaraanResponse = {
-    no_polisi: kendaraan.no_polisi,
-    nm_model_kb: kendaraan.nm_model_kb,
-    nm_jenis_kb: kendaraan.nm_jenis_kb,
-    kd_kel_kb: kelKbUpdated,
-    merek: {
-      kode: Number(kendaraan.kd_merek_kb),
-      nama: kendaraan.nm_merek_kb,
-    },
-    th_rakitan: kendaraan.th_rakitan,
-    jumlah_cc: kendaraan.jumlah_cc,
-    warna_kb: kendaraan.warna_kb,
-    tg_akhir_pkb: formatDate(kendaraan.tg_akhir_pkb),
-    tg_akhir_stnk: formatDate(finalStnk),
-    plat:{
-      kode: Number(kendaraan.kd_plat),
-      nama: warnaPlat
-    },
-    jenis_kendaraan:{
-      kode: kendaraan.kd_jenis_kb,
-      nama: jenisKb
-    },
-    jenis_milik: {
-      kode: kendaraan.kd_jen_milik,
-      nama: jenisMilik
-    },
-    fungsi_kendaraan: {
-      kode: kendaraan.kd_fungsi,
-      nama: fungsiKb
-    },
-    bbm: {
-      kode: Number(kendaraan.kd_bbm),
-      nama: namaBbm || 'BBM tidak ditemukan'
-    },
-    njkb: {
-      nilai_jual: formatRupiah(Math.round(njkb?.nilai_jual || 0)),
-      bobot: Number(njkb?.bobot || 0)
-    },
-    lokasi_transaksi_terakhir: {
-      kd_lokasi: kendaraan.kd_lokasi,
-      nama: lokasiTransaksiTerakhir || 'Lokasi tidak ditemukan'
-    }
-  };
-
-  return data;
+  const finalStnk = getFinalStnkDate(kendaraan);
+  return buildDetailKendaraanResponse(kendaraan, enrichment, finalStnk);
 }
 
 /**
@@ -186,12 +68,7 @@ export async function getKendaraanByNopol(
 export async function getPnbpKendaraan(
   nopol: string
 ): Promise<PnbpResponse | null> {
-  // Normalize nopol (hapus spasi, uppercase)
-  const normalizedNopol = normalizeNopol(nopol);
-  
-  // 1. Ambil data kendaraan
-  const kendaraan = await getKendaraanData(normalizedNopol);
-  
+  const kendaraan = await getKendaraanData(normalizeNopol(nopol));
   if (!kendaraan) {
     return null;
   }
@@ -201,55 +78,36 @@ export async function getPnbpKendaraan(
     throw new Error('Data tanggal akhir STNK tidak ditemukan');
   }
 
-  // Normalisasi tg_akhir_stnk (handle STNK mati atau tahun tidak sesuai)
-  if (kendaraan.tg_akhir_stnk && kendaraan.tg_akhir_pkb) {
-    kendaraan.tg_akhir_stnk = tgAkhirStnk(
-      kendaraan.tg_akhir_stnk,
-      kendaraan.tg_akhir_pkb
-    );
+  const normalizedStnk = normalizeStnkDate(kendaraan.tg_akhir_stnk, kendaraan.tg_akhir_pkb);
+  if (!normalizedStnk) {
+    throw new Error('Format tanggal akhir STNK tidak valid');
   }
 
-  const tglAkhirStnk = new Date(kendaraan.tg_akhir_stnk);
+  const tglAkhirStnk = normalizedStnk;
   const sekarang = new Date();
-  
-  // 3. Hitung status STNK
+
   const sudahHabis = tglAkhirStnk < sekarang;
   const tahunStnk = tglAkhirStnk.getFullYear();
   const tahunSekarang = sekarang.getFullYear();
   const akanHabisTahunIni = tahunStnk === tahunSekarang;
-  
-  // Hitung hari sebelum habis (null jika sudah habis)
+
   let hariSebelumHabis: number | null = null;
   if (!sudahHabis) {
     const selisihMs = tglAkhirStnk.getTime() - sekarang.getTime();
     hariSebelumHabis = Math.ceil(selisihMs / (1000 * 60 * 60 * 24));
   }
-  
-  // Perlu cetak STNK baru jika dalam 90 hari sebelum habis
-  const perluCetakBaru = !sudahHabis && hariSebelumHabis !== null && hariSebelumHabis <= 90;
-  
-  // 4. Hitung PNBP TNKB
-  const perlitunganPnbpTnkb = sudahHabis || akanHabisTahunIni;
-  let pnbpTnkb = 0;
-  
-  if (perlitunganPnbpTnkb) {
-    // Roda 2 (kd_jenis_kb == "R") = 60000
-    // Roda 4 (lainnya) = 100000
-    pnbpTnkb = kendaraan.kd_jenis_kb === 'R' ? 60000 : 100000;
-  }
-  
-  // 5. Hitung PNBP STNK
-  let pnbpStnk = 0;
-  
-  if (perlitunganPnbpTnkb && (sudahHabis || perluCetakBaru)) {
-    // Referensi PHP: R2 = 100000, R4 (lainnya) = 200000
-    pnbpStnk = kendaraan.kd_jenis_kb === 'R' ? 100000 : 200000;
-  }
-  
-  // 6. Total PNBP
-  const totalPnbp = pnbpTnkb + pnbpStnk;
-  
-  // 7. Susun response
+
+  const perluCetakBaru = !sudahHabis
+    && hariSebelumHabis !== null
+    && hariSebelumHabis <= STNK_RENEWAL_WINDOW_DAYS;
+
+  const { pnbpTnkb, pnbpStnk, totalPnbp } = calculatePnbp(
+    kendaraan.kd_jenis_kb,
+    sudahHabis,
+    akanHabisTahunIni,
+    perluCetakBaru
+  );
+
   const data: PnbpResponse = {
     nopol: kendaraan.no_polisi,
     kd_jenis_kb: kendaraan.kd_jenis_kb,

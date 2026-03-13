@@ -1,5 +1,5 @@
 import {
-    getDetailKendaraan,
+  getDetailKendaraan,
 } from '../../modules/kendaraan/kendaraan.query';
 import { DetailKendaraan } from '../../modules/kendaraan/kendaraan.type';
 
@@ -11,31 +11,37 @@ import { DetailKendaraan } from '../../modules/kendaraan/kendaraan.type';
  * @returns Data kendaraan atau null jika tidak ditemukan
  */
 export async function getKendaraanData(normalizedNopol: string): Promise<DetailKendaraan | null> {
-  let kendaraan = await getDetailKendaraan(
-    normalizedNopol,
-    '',
-    't_trnkb',
-    ''
-  );
-  
-  // Kalau tidak ada, coba dari t_mstkb
+  const findByTable = async (tableName: 't_trnkb' | 't_mstkb' | 'tt_trnkb'): Promise<DetailKendaraan | null> => {
+    try {
+      return await getDetailKendaraan(
+        normalizedNopol,
+        '',
+        tableName,
+        ''
+      );
+    } catch (error: unknown) {
+      // Beberapa tabel legacy bisa memiliki schema berbeda.
+      // Jika ada kolom yang tidak tersedia, skip ke tabel berikutnya.
+      if (
+        error instanceof Error
+        && typeof error.message === 'string'
+        && error.message.includes('Kolom tidak ditemukan')
+      ) {
+        return null;
+      }
+
+      throw error;
+    }
+  };
+
+  let kendaraan = await findByTable('t_trnkb');
+
   if (!kendaraan) {
-    kendaraan = await getDetailKendaraan(
-      normalizedNopol,
-      '',
-      't_mstkb',
-      ''
-    );
+    kendaraan = await findByTable('t_mstkb');
   }
 
-  // Kalau masih tidak ada, coba dari tt_trnkb
   if (!kendaraan) {
-    kendaraan = await getDetailKendaraan(
-      normalizedNopol,
-      '',
-      'tt_trnkb',
-      ''
-    );
+    kendaraan = await findByTable('tt_trnkb');
   }
 
   return kendaraan;
