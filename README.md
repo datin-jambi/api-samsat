@@ -53,6 +53,14 @@ Server running di `http://localhost:3000`
 
 ---
 
+## Dokumentasi Logic Pajak
+
+Dokumentasi flow proses dan rumus perhitungan pajak kendaraan tersedia di:
+
+- `docs/pajak-flow-dan-rumus.md`
+
+---
+
 ##  Deployment dengan Docker
 
 Gunakan **satu file `app.bat`** untuk semua keperluan deployment:

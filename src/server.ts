@@ -2,6 +2,28 @@ import { createApp } from './app';
 import { appConfig } from './config/app.config';
 import { testConnection, closePool } from './db/postgres';
 import { logger } from './utils/logger.util';
+import os from 'os';
+
+function getLocalIpAddresses(): string[] {
+  const interfaces = os.networkInterfaces();
+  const ipAddresses = new Set<string>();
+
+  for (const interfaceName of Object.keys(interfaces)) {
+    const addresses = interfaces[interfaceName];
+
+    if (!addresses) {
+      continue;
+    }
+
+    for (const address of addresses) {
+      if (address.family === 'IPv4' && !address.internal) {
+        ipAddresses.add(address.address);
+      }
+    }
+  }
+
+  return Array.from(ipAddresses);
+}
 
 /**
  * Start HTTP Server
@@ -23,10 +45,18 @@ async function startServer(): Promise<void> {
 
     // 3. Start server
     const server = app.listen(appConfig.port, () => {
+      const localIpAddresses = getLocalIpAddresses();
       logger.info('='.repeat(50));
       logger.info(`🚀 ${appConfig.name} is running`);
       logger.info(`📍 Environment: ${appConfig.env}`);
       logger.info(`🌐 Server: http://localhost:${appConfig.port}`);
+      if (localIpAddresses.length > 0) {
+        localIpAddresses.forEach((ipAddress) => {
+          logger.info(`🌐 Network: http://${ipAddress}:${appConfig.port}`);
+        });
+      } else {
+        logger.info('🌐 Network: local IP address not detected');
+      }
       logger.info(`🏥 Health: http://localhost:${appConfig.port}/health`);
       logger.info('='.repeat(50));
     });
