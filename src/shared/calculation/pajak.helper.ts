@@ -25,7 +25,7 @@ function getTarif(
     let tarif = 0.015; // Default tarif 1.5% sebelum opsen berlaku
     console.info(kd_jenis_milik);
     switch (kd_plat) {
-        default:
+        default: // HITAM atau selain 2 dan 3
             tarif = isOpsen ? 0.01 : 0.015; // 1% atau 1.5%
             if (
                 kd_fungsi == '04' || // SOSIAL/ KEAGAMAAN  
@@ -40,8 +40,7 @@ function getTarif(
                 }
             }
             return tarif;
-        case 'U':
-            // UMUM ORANG
+        case '2': // KUNING
             if (kd_jenis_kb == 'C' || // MINIBUS
                 kd_jenis_kb == 'D' || // MICROBUS
                 kd_jenis_kb == 'E' ){ // BUS
@@ -52,8 +51,8 @@ function getTarif(
                 }
             }
             return tarif;
-        case 'D':
-            tarif = 0.005;
+        case '3': // MERAH
+            tarif = 0.005; // 0.5% untuk plat 3, tidak ada perbedaan opsen
             return tarif;
     }
 }
@@ -73,7 +72,7 @@ function getPengenaan(
     let pengenaan = 1.0;
     console.info(kd_jenis_milik);
     switch (kd_plat) {
-        default:
+        default: // HITAM atau selain 2 dan 3
             pengenaan = isOpsen ? 0.904 : 1.0; // 90.4% atau 100%
             if (
                 kd_fungsi == '04' || // SOSIAL/ KEAGAMAAN  
@@ -88,8 +87,7 @@ function getPengenaan(
                 }
             }
             return pengenaan;
-        case 'U':
-            // UMUM ORANG
+        case '2': // KUNING
             if (kd_jenis_kb == 'C' || // MINIBUS
                 kd_jenis_kb == 'D' || // MICROBUS
                 kd_jenis_kb == 'E' ){ // BUS
@@ -100,8 +98,9 @@ function getPengenaan(
                 }
             }
             return pengenaan;
-        case 'D':
-            return 0.5; // 50% untuk plat D, tidak ada perbedaan opsen
+        case '3': // MERAH
+            pengenaan = 1.0; // 100% untuk plat 3, tidak ada perbedaan opsen
+            return pengenaan;
     } 
 }
 
@@ -126,9 +125,11 @@ export function calculatePKB(
     kd_jenis_milik: string,
     kd_fungsi: string
 ): number {
+    console.log({nilaiJual, bobot, isOpsen, kd_plat, kd_jenis_kb, kd_jenis_milik, kd_fungsi});
     const bobotNumber = typeof bobot === 'string' ? parseFloat(bobot) : bobot;
     const tarif = getTarif(isOpsen, kd_plat, kd_jenis_kb, kd_jenis_milik, kd_fungsi);
     const pengenaan = getPengenaan(isOpsen, kd_plat, kd_jenis_kb, kd_jenis_milik, kd_fungsi);
+    console.log(`Tarif: ${tarif}, Pengenaan: ${pengenaan}`);
     
     return tarif * nilaiJual * bobotNumber * pengenaan;
 }
