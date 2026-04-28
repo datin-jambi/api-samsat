@@ -82,6 +82,10 @@ export function buildJrRequestBody(kendaraan: JrKendaraanData): JrApiRequest {
   const masaLakuYad = hitungMasaLakuYangAkanDatang(masaLakuLaluDate);
   const kodeMerek = String(kendaraan.kd_merek_kb);
 
+  console.log("==============JR==============")
+  console.log({ masaLakuLaluDate, masaLakuLalu, masaLakuYad })
+  console.log("==============JR==============")
+
   return {
     APIKey: JR_CONSTANTS.API_KEY,
     Cat: JR_CONSTANTS.CAT,
