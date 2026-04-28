@@ -65,8 +65,15 @@ export function hitungMasaLakuYangAkanDatang(date: Date): string {
     masaLaku.setFullYear(masaLaku.getFullYear() + 1);
   }
 
-  // Tambah 1 tahun lagi setelah loop
-  masaLaku.setFullYear(masaLaku.getFullYear() + 1);
+  let tahunLaku = masaLaku.getFullYear();
+  let tahunSekarang = today.getFullYear();
+
+  if (tahunLaku == tahunSekarang) {
+    masaLaku.setFullYear(masaLaku.getFullYear() + 2);
+  } else {
+    // Tambah 1 tahun lagi setelah loop
+    masaLaku.setFullYear(masaLaku.getFullYear() + 1);
+  }
 
   return formatTanggalJr(masaLaku);
 }
