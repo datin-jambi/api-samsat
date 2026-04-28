@@ -62,7 +62,7 @@ export function hitungMasaLakuYangAkanDatang(date: Date): string {
   masaLaku.setHours(0, 0, 0, 0);
 
   while (masaLaku <= today) {
-    masaLaku.setFullYear(masaLaku.getFullYear() + 1);
+    masaLaku.setFullYear(masaLaku.getFullYear() + 2);
   }
 
   return formatTanggalJr(masaLaku);
@@ -77,8 +77,6 @@ export function buildJrRequestBody(kendaraan: JrKendaraanData): JrApiRequest {
   if (Number.isNaN(masaLakuLaluDate.getTime())) {
     throw new Error('Format tanggal akhir PKB tidak valid');
   }
-
-  masaLakuLaluDate.setFullYear(masaLakuLaluDate.getFullYear() - 1);
 
   const masaLakuLalu = formatTanggalJr(masaLakuLaluDate);
   const masaLakuYad = hitungMasaLakuYangAkanDatang(masaLakuLaluDate);
