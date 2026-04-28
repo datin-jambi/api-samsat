@@ -62,8 +62,11 @@ export function hitungMasaLakuYangAkanDatang(date: Date): string {
   masaLaku.setHours(0, 0, 0, 0);
 
   while (masaLaku <= today) {
-    masaLaku.setFullYear(masaLaku.getFullYear() + 2);
+    masaLaku.setFullYear(masaLaku.getFullYear() + 1);
   }
+
+  // Tambah 1 tahun lagi setelah loop
+  masaLaku.setFullYear(masaLaku.getFullYear() + 1);
 
   return formatTanggalJr(masaLaku);
 }
@@ -78,7 +81,11 @@ export function buildJrRequestBody(kendaraan: JrKendaraanData): JrApiRequest {
     throw new Error('Format tanggal akhir PKB tidak valid');
   }
 
+  // MASA_LAKU_LALU = tg_akhir_pkb + 1 tahun
+  masaLakuLaluDate.setFullYear(masaLakuLaluDate.getFullYear() + 1);
   const masaLakuLalu = formatTanggalJr(masaLakuLaluDate);
+
+
   const masaLakuYad = hitungMasaLakuYangAkanDatang(masaLakuLaluDate);
   const kodeMerek = String(kendaraan.kd_merek_kb);
 
